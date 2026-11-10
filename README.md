@@ -67,7 +67,7 @@ device in hand.
 
 ## Licences and credits
 
-- **Code**: MIT. Inspired by [warsaw-vibe-voxel](https://github.com/stared/warsaw-vibe-voxel) by Piotr Migdał
+- **Code**: [MIT](LICENSE), © 2026 Rafael Keramidas (SideQuest Bar). Inspired by [warsaw-vibe-voxel](https://github.com/stared/warsaw-vibe-voxel) by Piotr Migdał
   (MIT, © 2026): this project uses its tile format (`scripts/tiles.py`, read by `web/src/engine/mesher.worker.ts`), and
   `scripts/tiles.py`, `scripts/osm.py`, `scripts/osm_pbf.py` and `scripts/style.py` (`parse_colour`, the ground palette)
   started from its scripts. The viewer (`web/src/`) is this project's own code; it uses three.js's OrbitControls. Its
