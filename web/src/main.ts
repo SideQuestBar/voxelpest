@@ -412,12 +412,19 @@ async function setMode(m: Mode, at?: At) {
 car.onReset = () => {
   const l = car.lastSafe(), spot = streetSpot(l.x, l.z, car.spec.ground, 80) ?? streetSpot(l.x, l.z, car.spec.ground, 200);
   if (spot) car.place(spot.x, spot.y, spot.z, roadHeading(spot.x, spot.z, l.h));
+  // no street found (its tiles not in yet): back where it last drove, rather than falling on and asking every frame
+  else car.place(l.x, Math.max(l.y, world.groundAt(l.x, l.z) ?? 0), l.z, l.h);
 };
 // fallen through the map (a hole in the ground, a tile's seam): the lowest floors, underpasses and the quays, are
 // above the base, so anything FELL under it has nothing below; back to the nearest street to where it last stood
 const FELL = -6;
 const stood = { x: 0, z: 0, set: false };
+let rescued = -1e9;
 function rescue() {
+  const under = mode === 'walk' ? walker.feet.y <= FELL : mode === 'drive' && car.pos.y < FELL;
+  // the search for a street floods hundreds of metres of columns: not every frame while something keeps falling
+  if (under && performance.now() - rescued < 1000) return;
+  if (under) rescued = performance.now();
   if (mode === 'walk') {
     const f = walker.feet;
     if (f.y > FELL) {
@@ -428,6 +435,7 @@ function rescue() {
     const [x, z] = stood.set ? [stood.x, stood.z] : [f.x, f.z];
     const spot = streetSpot(x, z, 'foot', 80) ?? streetSpot(x, z, 'foot', 200);
     if (spot) walker.place(spot.x, spot.y, spot.z, walker.yaw);
+    else walker.place(x, (world.groundAt(x, z) ?? 0) + 0.1, z, walker.yaw);
   } else if (mode === 'drive' && car.pos.y < FELL) car.onReset?.();
 }
 

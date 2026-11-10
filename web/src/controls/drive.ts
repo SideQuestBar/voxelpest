@@ -192,9 +192,16 @@ export class Car {
     for (const [lx, lz] of wheels) {
       const [x, z] = this.at(lx, lz);
       const fl = this.world.floor(x, z, this.pos.y, sp.step);
-      ys.push(fl ? fl.top : this.pos.y);
+      // a wheel in a post's column (the car clipped it between two of its side points): the ground and the post are
+      // one solid there with no top to stand on, the floor comes back far below, and the car sank through the street
+      const inside = this.world.blocked(x, z, this.pos.y + sp.step + 0.01, this.pos.y + sp.step + 0.3) === true;
+      ys.push(fl && !inside ? fl.top : this.pos.y);
       if (fl?.mat === MAT.WATER) water = true;
     }
+    // a wheel over a hole or an edge hangs at most 1.2 m under the highest: the others carry the car, which falls
+    // only once they are all over the drop
+    const hi = Math.max(...ys);
+    for (let k = 0; k < ys.length; k++) ys[k] = Math.max(ys[k], hi - 1.2);
     const front = bike ? ys[0] : (ys[0] + ys[1]) / 2, rear = bike ? ys[1] : (ys[2] + ys[3]) / 2;
     const ground = Math.max(rear + ((front - rear) * -ra) / wb, Math.min(...ys));
     this.vy -= GRAVITY * dt;

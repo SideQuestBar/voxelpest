@@ -162,7 +162,10 @@ export class Tiles {
     for (const t of [...this.tiles.values()]) {
       if (t.mesh) this.show(t, show.has(t), now);
       // forget what nobody asked for in 10 s (never the coarsest level)
-      if (t.state === 'ready' && t.s !== top && !show.has(t) && !this.fading.has(t) && (now - t.wanted > this.keepMs || (over > 1 && t.wanted !== now))) this.free(t);
+      // (nor the finest tiles under the walker or the car: loaded ahead by ready(), they are not asked for again
+      // until their parents are in, and on a slow connection they went from under the wheels in the meantime)
+      const held = t.s === fine && f.r > 0 && this.bounds(t.s, t.tx, t.ty).distanceToPoint(focusAt) < f.r;
+      if (t.state === 'ready' && t.s !== top && !show.has(t) && !held && !this.fading.has(t) && (now - t.wanted > this.keepMs || (over > 1 && t.wanted !== now))) this.free(t);
       // (not one somebody waits for: a frame longer than that, on a slow phone, and walking or driving never started)
       else if (t.state === 'queued' && !t.waiters.length && now - t.wanted > 1500) t.state = 'new';
     }
