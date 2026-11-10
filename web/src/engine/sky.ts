@@ -122,9 +122,9 @@ export class Sky {
     this.dome.renderOrder = -1;
     this.dome.scale.setScalar(20000);
     scene.add(this.dome, this.sun, this.sun.target, this.moon, this.moon.target, this.hemi);
-    this.sun.castShadow = true;
+    this.sun.castShadow = shadowSize > 0;
     const sh = this.sun.shadow;
-    sh.mapSize.set(shadowSize, shadowSize);
+    sh.mapSize.set(shadowSize || 16, shadowSize || 16);
     sh.bias = -0.0004;
     sh.normalBias = 0.35;
     sh.camera.near = 10;

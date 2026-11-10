@@ -52,18 +52,25 @@ class Out {
 
 const occ = (s1: number, s2: number, c: number) => (s1 && s2 ? 0 : 3 - (s1 + s2 + c));
 
+let scratchOut: Out | null = null, scratchOff: Uint32Array | null = null;
+
 function mesh(buf: ArrayBuffer, job: MeshJob): MeshResult {
   const { N, s } = job, S = N + 2, n2 = S * S;
-  const counts = new Uint16Array(buf.slice(0, n2 * 2));
-  const ground = new Uint8Array(buf.slice(n2 * 2, n2 * 3));
-  const off = new Uint32Array(n2 + 1);
+  // Views of the tile's bytes, copies only of what goes back with the mesh, and one output kept between tiles: a
+  // worker's garbage is collected late in Safari, and tile after tile it grew to over a gigabyte on an iPhone
+  const view = !job.keep && n2 % 2 === 0;
+  const counts = view ? new Uint16Array(buf, 0, n2) : new Uint16Array(buf.slice(0, n2 * 2));
+  const ground = view ? new Uint8Array(buf, n2 * 2, n2) : new Uint8Array(buf.slice(n2 * 2, n2 * 3));
+  if (!scratchOff || scratchOff.length !== n2 + 1) scratchOff = new Uint32Array(n2 + 1);
+  const off = job.keep ? new Uint32Array(n2 + 1) : scratchOff;
   for (let i = 0; i < n2; i++) off[i + 1] = off[i] + counts[i];
   const nr = off[n2];
-  const runs = new Uint16Array(buf.slice(n2 * 3, n2 * 3 + nr * 6));
-  const detail = new Uint16Array(buf.slice(n2 * 3 + nr * 6));
+  const runs = view ? new Uint16Array(buf, n2 * 3, nr * 3) : new Uint16Array(buf.slice(n2 * 3, n2 * 3 + nr * 6));
+  const detail = view ? new Uint16Array(buf, n2 * 3 + nr * 6, (buf.byteLength - n2 * 3 - nr * 6) >> 1) : new Uint16Array(buf.slice(n2 * 3 + nr * 6));
   const X0 = job.tx * N * s, Z0 = job.ty * N * s;
   const see = job.see, hides = (p: number, by: number) => !see || !see[by] || !!see[p];  // does a voxel `by` hide `p`'s face
-  const out = new Out();
+  const out = scratchOut ??= new Out();
+  out.n = 0;
   let top = 0;
 
   const col = (x: number, y: number) => (y + 1) * S + (x + 1);
@@ -219,6 +226,7 @@ function mesh(buf: ArrayBuffer, job: MeshJob): MeshResult {
     }
   }
   const n = out.n;
+  if (out.cap > 1 << 18) scratchOut = null;  // a rare huge tile's output isn't kept
   return {
     id: job.id, pos: out.pos.slice(0, n * 12), va: out.va.slice(0, n * 16), pal: out.pal.slice(0, n * 4), quads: n,
     top: top * s, cols: job.keep ? { counts, off, runs, ground } : null,

@@ -44,7 +44,8 @@ export class Tiles {
   meshed = 0;                              // tiles meshed since the start, for the loading screen and the tile bar
   see: Uint8Array | null = null;           // seasons (engine/foliage.ts): leaves hide no other faces (mesher.worker.ts)
   depth: THREE.Material | null = null;     // and the shadow pass drops bare leaves (material.ts)
-  private readonly workers: { w: Worker; busy: boolean }[] = [];
+  private readonly workers: { w: Worker; busy: boolean; jobs: number }[] = [];
+  recycle = Infinity;                      // a worker is replaced after this many tiles (phones: its heap goes with it)
   private readonly jobs = new Map<number, Tile>();
   private nextId = 1;
   private index: THREE.BufferAttribute | null = null;   // the quads' index, shared by every tile (indexFor)
@@ -66,11 +67,13 @@ export class Tiles {
     this.group.scale.setScalar(meta.vox);
     // two on phones: each worker holds a tile's data and its growing mesh while it works
     const n = matchMedia('(pointer: coarse)').matches ? 2 : Math.min(Math.max((navigator.hardwareConcurrency || 4) - 1, 2), 8);
-    for (let i = 0; i < n; i++) {
-      const w = new MesherWorker();
-      w.onmessage = (e: MessageEvent<MeshResult>) => this.done(e.data, i);
-      this.workers.push({ w, busy: false });
-    }
+    for (let i = 0; i < n; i++) this.workers.push({ w: this.spawn(i), busy: false, jobs: 0 });
+  }
+
+  private spawn(i: number) {
+    const w = new MesherWorker();
+    w.onmessage = (e: MessageEvent<MeshResult>) => this.done(e.data, i);
+    return w;
   }
 
   key(s: number, tx: number, ty: number) { return `${s}/${tx}_${ty}`; }
@@ -228,7 +231,13 @@ export class Tiles {
   }
 
   private done(r: MeshResult, wi: number) {
-    this.workers[wi].busy = false;
+    const wk = this.workers[wi];
+    wk.busy = false;
+    if (++wk.jobs >= this.recycle) {
+      wk.w.terminate();
+      wk.w = this.spawn(wi);
+      wk.jobs = 0;
+    }
     const t = this.jobs.get(r.id);
     this.jobs.delete(r.id);
     if (t) {

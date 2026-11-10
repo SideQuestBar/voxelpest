@@ -12,7 +12,7 @@ export class Stats {
 
   constructor() { document.body.appendChild(this.el); }
 
-  frame(now: number, info: THREE.WebGLInfo, tiles: { shown: number; loading: number }) {
+  frame(now: number, info: THREE.WebGLInfo, tiles: { shown: number; loading: number; bytes: number; budget: number }, note = '') {
     if (this.last) {
       this.frames++;
       this.worst = Math.max(this.worst, now - this.last);
@@ -22,7 +22,8 @@ export class Stats {
     const ms = (now - this.t0) / this.frames, r = info.render;
     this.el.textContent = `${(1000 / ms).toFixed(0)} fps · ${ms.toFixed(1)} ms (max ${this.worst.toFixed(0)})\n`
       + `${r.calls} draws · ${(r.triangles / 1e6).toFixed(2)} M tris\n`
-      + `tiles ${tiles.shown} shown · ${tiles.loading} loading`;
+      + `tiles ${tiles.shown} shown · ${tiles.loading} loading\n`
+      + `${(tiles.bytes / 1e6).toFixed(0)} MB` + (isFinite(tiles.budget) ? ` of ${(tiles.budget / 1e6).toFixed(0)}` : '') + note;
     this.t0 = now;
     this.frames = 0;
     this.worst = 0;

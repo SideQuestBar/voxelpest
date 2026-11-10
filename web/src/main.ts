@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { Input, PAD } from './controls/input';
 import { initAnalytics, track, trackSoon } from './analytics';
+import { keepAlive, startLite } from './recover';
 import { initPwa } from './pwa';
 import { Car } from './controls/drive';
 import { lampLit } from './controls/kit';
@@ -68,17 +69,25 @@ const renderer = (() => {
     return new THREE.WebGLRenderer({ antialias: !isTouch(), powerPreference: 'high-performance', preserveDrawingBuffer: qs.has('shot') });
   } catch (e) { return failed(e); }
 })();
-renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch() ? 1.5 : 2));
+// the last start died on this device: lighter this time (recover.ts); ?dpr=, ?shadow=, ?budget= (MB), ?err= to try by hand
+const lite = startLite(qs, isTouch());
+const light = isTouch() || lite.level > 0;
+renderer.setPixelRatio(Math.min(devicePixelRatio, +(qs.get('dpr') ?? (light ? lite.dpr : 2))));
 renderer.setSize(vw, vh, false);
-renderer.shadowMap.enabled = true;
+const shadowSize = +(qs.get('shadow') ?? (light ? lite.shadow : 4096));
+renderer.shadowMap.enabled = shadowSize > 0;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 $('#app').appendChild(renderer.domElement);
+// a lost WebGL context (iOS takes it from a page left in the background): the tiles' data went to the GPU and
+// nowhere else, so start again once the browser gives one back
+renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); renderer.setAnimationLoop(null); track('contextlost'); });
+renderer.domElement.addEventListener('webglcontextrestored', () => location.reload());
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, vw / vh, 0.3, 40000);
 
-const { mat, fading, look, depth, lamps } = makeMaterial(meta, isTouch());
+const { mat, fading, look, depth, lamps } = makeMaterial(meta, light);
 lampLit(lamps);
 const tiles = new Tiles(meta, mat, fading);
 if (depth) {  // trees that go bare: their trunks and branches, and what stands behind them, keep their faces
@@ -87,11 +96,12 @@ if (depth) {  // trees that go bare: their trunks and branches, and what stands 
 }
 // phones: a little coarser and quicker to forget tiles. An iPhone reloads a page that takes too much memory, and the
 // map with its trees and seasons did while moving round
-if (isTouch()) { tiles.err = 2.9; tiles.keepMs = 4000; tiles.budget = 160e6; }
+if (light) { tiles.err = 2.9 * lite.err; tiles.keepMs = 4000; tiles.recycle = 16; tiles.budget = lite.budget * 1e6; }
 if (qs.has('err')) tiles.err = +qs.get('err')!;
+if (qs.has('budget')) tiles.budget = +qs.get('budget')! * 1e6;
 scene.add(tiles.group);
 const world = new World(tiles, meta);
-const sky = new Sky(scene, look, meta, +(qs.get('shadow') ?? (isTouch() ? 2048 : 4096)));
+const sky = new Sky(scene, look, meta, shadowSize);
 const weather = new Weather(scene, isTouch());
 const input = new Input($('#touch'));
 const map = new MapControls(camera, renderer.domElement, input);
@@ -519,12 +529,18 @@ function frame(now: number) {
   if (shown) ui.tiles(tiles.loading, tiles.meshed);
   else loader?.progress(0.2 + 0.8 * (tiles.meshed / Math.max(tiles.meshed + tiles.loading, 1)), T().loadingCity(tiles.meshed, tiles.meshed + tiles.loading));
   renderer.render(scene, camera);
-  stats?.frame(now, renderer.info, tiles);
+  stats?.frame(now, renderer.info, tiles, ` · lite ${lite.level}` + (lite.crashed ? `\nlast start died after ${lite.crashed.secs} s: ${lite.crashed.mode}, ${lite.crashed.mb} MB` : ''));
   if (!shown && tiles.shown > 0 && tiles.loading < 4) {
     shown = true;
     window.__ready = true;
     initAnalytics();
     initPwa($<HTMLButtonElement>('#install-btn'));
+    keepAlive(() => ({ mode, mb: Math.round(tiles.bytes / 1e6), tiles: tiles.shown }));
+    if (lite.crashed) {
+      console.warn('the last start died', lite.crashed, 'lite', lite.level);
+      track('crash', { level: lite.level, mode: lite.crashed.mode, mb: Math.min(lite.crashed.mb, 1000), secs: Math.min(lite.crashed.secs, 1000), tiles: lite.crashed.tiles });
+      if (lite.level > 0) ui.toast(T().lighter);
+    }
     track('start', { lang: lang(), input: isTouch() ? 'touch' : 'mouse', app: !!desktop, mode });
     onLang((l) => track('lang', { lang: l }));
     const m = qs.get('mode'), v = meta.views[qs.get('view') ?? ''];
