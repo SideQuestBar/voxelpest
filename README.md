@@ -1,5 +1,7 @@
 # Budapest in voxels
 
+![The Danube from above Margaret Bridge: the Parliament, the Chain Bridge and Gellért Hill](docs/banner.jpg)
+
 A 5.4 × 5.0 km diorama of central Budapest in 0.5 m voxels, built only from free data, with thirty-nine landmarks built
 by hand. Fly over it, walk its streets or drive through it, in Budapest's live time and weather or any day and hour of
 the year, in English or Hungarian. It also runs as a Minecraft server. Made by [SideQuest Bar](https://side-quest.bar);
@@ -7,6 +9,17 @@ inspired by Piotr Migdał's [warsaw-vibe-voxel](https://github.com/stared/warsaw
 
 The map runs from Széll Kálmán tér and Castle Hill to Keleti, the Városliget and the Puskás Aréna, and from Margaret
 Bridge to Petőfi Bridge.
+
+## Screenshots
+
+| | |
+| --- | --- |
+| ![The Chain Bridge and Buda Castle on a June morning](docs/screenshot2.jpg) The Chain Bridge and Buda Castle in June | ![The inner city in autumn rain](docs/screenshot1.jpg) The inner city in autumn rain |
+| ![Heroes' Square and the Városliget under snow](docs/screenshot3.jpg) Heroes' Square and the Városliget in December snow | ![A police car on Blaha Lujza tér](docs/screenshot5.jpg) Drive mode: a police car on Blaha Lujza tér |
+
+![Riding a MOL Bubi bike in drive mode](docs/screenshot4.jpg)
+
+Drive mode on a MOL Bubi bike.
 
 ## Quick start
 
