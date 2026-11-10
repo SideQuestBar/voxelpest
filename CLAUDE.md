@@ -178,6 +178,11 @@ Full description in `minecraft/README.md`. Working knowledge:
   in 26.x's layout (`world/dimensions/minecraft/overworld/region`), palette entries as compounds, `isLightOn 0`, no
   heightmaps (the server makes them). `minecraft_blocks.json` (from `minecraft_blocks.py`, which reads the client
   jar's textures) is all it needs from Mojang.
+- **Teleports** (`views_to_landmarks`, `standing`, `Ground`): each view becomes a spot on the ground by its subject,
+  not the camera's place: from the target towards the camera, the first 3 × 3 level patch under the sky that belongs
+  to the streets (a component, steps ≤ 1 block, with `STREET` m² at ground level: courts, roofs and the Puskás pitch
+  fail), then up to 12 m back. A second level per column (`low`) only carries connectivity (the deck under a bridge's
+  tower, the road under a deck). `AERIAL` (overview) stays in the air; `walk` views stand on their floor.
 - Materials map to block families (`FAMILY`); WATER and JET become water. Water once fell through to the generic
   family and the Danube came out as grey terracotta: check the preview's river when touching the mapping.
 - **Plugin** (`bar.sidequest.voxelpest`, Paper API 26.3, Java 25): `VoxelpestPlugin` (landmarks, commands, flight,

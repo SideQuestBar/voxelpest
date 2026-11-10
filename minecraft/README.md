@@ -92,7 +92,7 @@ can go in `~/.config/voxelpest/env`. Java and Maven are only needed to rebuild t
 | Command | |
 | --- | --- |
 | `/lm` | the landmarks, clickable (aliases `/landmark`, `/warp`) |
-| `/lm <name>` | teleport there, flying: `/lm opera`, `/lm hosok`, `/lm Halászbástya`, `/lm chain`. Ids, English and Hungarian names, accents optional |
+| `/lm <name>` | teleport there, on the ground beside it: `/lm opera`, `/lm hosok`, `/lm Halászbástya`, `/lm chain`. Ids, English and Hungarian names, accents optional |
 | `/fly` | flying on or off (on when you join; double-jump to take off) |
 | `/flyspeed 1-10` | flying speed (3 when you join) |
 | `/spawn` | back to the start: Kossuth tér, by the flag in front of the Parliament (also `/lm flag`) |
@@ -101,8 +101,11 @@ can go in `~/.config/voxelpest/env`. Java and Maven are only needed to rebuild t
 | `/terms` | the links to SideQuest Bar's Terms of Service and Privacy Policy, which cover this server (aliases `/privacy`, `/rules`, `/tos`); the welcome message links them too |
 | `/voxelpest reload` | (op) reload the settings and landmarks |
 
-The landmarks are the web viewer's views (`meta.json`), from the same camera positions: add a view in
-`scripts/voxelize.py` and it becomes a teleport. Hungarian names are in `ALIASES` in `scripts/minecraft.py`. One more,
+The landmarks are the web viewer's views (`meta.json`): add a view in `scripts/voxelize.py` and it becomes a
+teleport. Players arrive on the ground next to the view's subject, on the side the view shows, facing it
+(`standing` in `scripts/minecraft.py`: from the view's target towards its camera, the first open spot that belongs to
+the streets, so no inner court, roof or stadium pitch; bridges put you on their deck). `overview` stays in the air, and
+a view indoors (`walk`) stands on its floor. Hungarian names are in `ALIASES` in `scripts/minecraft.py`. One more,
 `bar`, stands on the pavement at the bar's door (`meta.sidequest.door`, from `scripts/sidequest.py`): `/bar` and
 `/lm bar` go there.
 

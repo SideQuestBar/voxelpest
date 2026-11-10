@@ -8,7 +8,7 @@ Reads web/public/data (meta.json, tiles/2) and scripts/minecraft_blocks.json (sc
 blocks' colours from the game's textures). Writes
 
     build/minecraft/world/dimensions/minecraft/overworld/region/r.X.Z.mca   the world (Anvil, Minecraft 26.x layout)
-    build/minecraft/landmarks.yml    the plugin's teleports: every view of the web viewer, as a camera position
+    build/minecraft/landmarks.yml    the plugin's teleports: every view of the web viewer, on the ground by its subject
     build/minecraft/map.yml          the map's bounds, spawn, height offset and build time (for the plugin)
     build/minecraft/preview.png      the world from above, one pixel per 4 blocks, from the chosen blocks' colours
 
@@ -454,23 +454,175 @@ ALIASES = {
 }
 
 
+AERIAL = {"overview"}     # views that stay in the air: the whole city from above
+REACH = 320               # metres of the map read round a view's target
+STREET = 20000            # m2 of connected street-level ground that make a place "the streets" (not a court, a roof or a pitch)
+
+
+class Ground:
+    """where a player can stand, from the level-2 tiles, per 1 m column: `top`, the top of the highest block that
+    isn't a leaf (the feet's height in cells above the base), and `low`, the lowest place to stand from the ground up
+    (the deck under a bridge's tower, the road under a deck); each with whether three blocks over it are free"""
+
+    def __init__(self, meta):
+        self.mat = np.array([e[3] for e in meta["palette"]], np.int16)
+        self.tiles = {}
+
+    def tile(self, tx, ty):
+        key = (tx, ty)
+        if key not in self.tiles:
+            p = DATA / "tiles" / "2" / f"{tx}_{ty}.bin"
+            self.tiles[key] = self.surface(*read_tile(p)) if tx >= 0 and ty >= 0 and p.exists() else None
+        return self.tiles[key]
+
+    def surface(self, runs, col, ground, det):
+        o = np.lexsort((runs[:, 0], col))
+        runs, col = runs[o], col[o]
+        m = self.mat[runs[:, 2]]
+        hard = m != LEAF
+        top = runs[:, 0] + runs[:, 1]
+        nxt = np.full(len(runs), 1 << 20)           # the next run up the column
+        same = col[1:] == col[:-1]
+        nxt[:-1][same] = runs[1:, 0][same]
+        free = hard & (nxt - top >= 3) & ~np.isin(m, (WATER, JET, CAR))
+        if len(det):                                # posts, railings, lamps in the way
+            thin = ((det[:, 1] // 2 + 1) * S + det[:, 0] // 2 + 1) * 512 + det[:, 2] // 2
+            for k in range(3):
+                free &= ~np.isin(col * 512 + top + k, thin)
+        g = ground.reshape(-1).astype(np.int64)
+        feet = np.zeros(S * S, np.int64)
+        np.maximum.at(feet, col[hard], top[hard])
+        ok = np.zeros(S * S, bool)
+        on = hard & (top == feet[col])              # the run a player would stand on
+        ok[col[on]] = free[on]
+        low = np.full(S * S, 1 << 20, np.int64)
+        up = free & (top >= g[col] - 1)
+        np.minimum.at(low, col[up], top[up])
+        lok = low < 1 << 20
+        low[~lok] = 0
+        cut = lambda a: a.reshape(S, S)[1:-1, 1:-1]
+        return cut(feet).astype(np.int16), cut(ok), cut(g).astype(np.int16), cut(low).astype(np.int16), cut(lok)
+
+    def window(self, x0, z0, x1, z1):
+        """top, its ok, the ground, low, its ok over columns x0..x1, rows z0..z1"""
+        out = [np.zeros((z1 - z0, x1 - x0), t) for t in (np.int16, bool, np.int16, np.int16, bool)]
+        for ty in range(z0 // N, (z1 - 1) // N + 1):
+            for tx in range(x0 // N, (x1 - 1) // N + 1):
+                t = self.tile(tx, ty)
+                if t is None:
+                    continue
+                r0, r1, c0, c1 = max(z0, ty * N), min(z1, ty * N + N), max(x0, tx * N), min(x1, tx * N + N)
+                src = (slice(r0 - ty * N, r1 - ty * N), slice(c0 - tx * N, c1 - tx * N))
+                dst = (slice(r0 - z0, r1 - z0), slice(c0 - x0, c1 - x0))
+                for a, b in zip(out, t):
+                    a[dst] = b[src]
+        return out
+
+    def floor(self, x, z, h):
+        """indoors: the floor under a camera at height h (cells above the base) in column x, z"""
+        tx, ty = int(x) // N, int(z) // N
+        p = DATA / "tiles" / "2" / f"{tx}_{ty}.bin"
+        if not p.exists():
+            return None
+        runs, col, _, _ = read_tile(p)
+        mine = runs[col == (int(z) - ty * N + 1) * S + int(x) - tx * N + 1]
+        tops = [int(z0 + n) for z0, n, pal in mine if self.mat[pal] != LEAF and z0 + n <= h]
+        return max(tops) if tops else None
+
+
+def standing(G, pos, target, Wb, Db):
+    """a place on the ground by a view's subject: from the target towards the camera, the first open spot of the
+    streets (ground under the sky that a player can walk to from the streets, so bridge decks and terraces too, but
+    no court and no roof), then a few steps back for the look of it. -> x, feet (cells above the base), z, or None"""
+    from scipy import ndimage
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    (px, _, pz), (tx, _, tz) = pos, target
+    x0, z0 = max(int(tx) - REACH, 0), max(int(tz) - REACH, 0)
+    x1, z1 = min(int(tx) + REACH, Wb), min(int(tz) + REACH, Db)
+    feet, ok, gr, low, lok = G.window(x0, z0, x1, z1)
+    # what can be walked: neighbours no more than a block apart in height, on either of a column's two levels
+    n = feet.size
+    idx = np.arange(n).reshape(feet.shape)
+    lay = ((feet.astype(np.int32), ok, 0), (low.astype(np.int32), lok, n))
+    i, j = [idx[ok & lok & (feet == low)]], [idx[ok & lok & (feet == low)] + n]
+    for fa, oa, na in lay:
+        for fb, ob, nb in lay:
+            e = oa[:, :-1] & ob[:, 1:] & (np.abs(fa[:, :-1] - fb[:, 1:]) <= 1)
+            i.append(idx[:, :-1][e] + na), j.append(idx[:, 1:][e] + nb)
+            e = oa[:-1] & ob[1:] & (np.abs(fa[:-1] - fb[1:]) <= 1)
+            i.append(idx[:-1][e] + na), j.append(idx[1:][e] + nb)
+    i, j = np.concatenate(i), np.concatenate(j)
+    _, lab = connected_components(coo_matrix((np.ones(len(i), bool), (i, j)), shape=(2 * n,) * 2), directed=False)
+    lab = lab[:n].reshape(feet.shape)   # places are chosen under the sky only: the top level
+    street = ok & (np.abs(feet - gr) <= 2)
+    walk = ok & (feet >= gr - 1) & (np.bincount(lab[street], minlength=lab.max() + 1) >= STREET)[lab]
+    # room to stand: the 3 x 3 round it walkable and level
+    room = ndimage.minimum_filter(walk, 3) & (ndimage.maximum_filter(feet, 3) - ndimage.minimum_filter(feet, 3) <= 1)
+    if not room.any():
+        return None
+
+    def at(x, z):
+        r, c = int(z) - z0, int(x) - x0
+        return 0 <= r < room.shape[0] and 0 <= c < room.shape[1] and (r, c)
+
+    d = math.hypot(px - tx, pz - tz)
+    ux, uz = ((px - tx) / d, (pz - tz) / d) if d > 1 else (0.0, 1.0)
+    spot = None
+    for t in np.arange(0, min(d, REACH - 20) + 0.5, 0.5):
+        q = at(tx + ux * t, tz + uz * t)
+        if q and room[q]:
+            spot = q
+            for back in np.arange(0.5, 12.5, 0.5):   # a few steps back, while the way stays open
+                q = at(tx + ux * (t + back), tz + uz * (t + back))
+                if not q or not walk[q]:
+                    break
+                if room[q]:
+                    spot = q
+            break
+    if spot is None:  # nothing that way (a bridge's middle from the river): the nearest place to the target
+        rr, cc = np.nonzero(room)
+        k = np.argmin((rr + z0 + 0.5 - tz) ** 2 + (cc + x0 + 0.5 - tx) ** 2)
+        spot = int(rr[k]), int(cc[k])
+    return spot[1] + x0 + 0.5, int(feet[spot]), spot[0] + z0 + 0.5
+
+
 def views_to_landmarks(meta, y0, Wb, Db, ymax=290):
-    """the viewer's views as teleports: the camera's place and gaze; a camera above the build limit or off the map
-    slides along its line of sight towards the target until it is back"""
+    """the viewer's views as teleports: on the ground by the view's subject, on the side the view shows, looking at
+    it (`standing`). A view indoors (`walk`) stands on its floor. AERIAL views keep the camera's place: one above the
+    build limit or off the map slides along its line of sight towards the target until it is back"""
+    G = Ground(meta)
     out = []
     for key, v in meta["views"].items():
         (px, ph, pz), (tx, th, tz) = v["pos"], v["target"]
-        t = 1.0
-        while t > 0.05:
-            x, h, z = tx + t * (px - tx), th + t * (ph - th), tz + t * (pz - tz)
-            if h + y0 <= ymax and 8 <= x <= Wb - 8 and 8 <= z <= Db - 8:
-                break
-            t -= 0.02
-        px, ph, pz = x, h, z
+        feet = None
+        if v.get("walk"):
+            feet = G.floor(px, pz, ph)
+        elif key not in AERIAL:
+            s = standing(G, v["pos"], v["target"], Wb, Db)
+            if s:
+                px, feet, pz = s
+            else:
+                print(f"  landmark {key}: no ground found near it, left in the air")
+        if feet is not None:
+            ph = feet + 1.62   # the eyes
+        else:
+            t = 1.0
+            while t > 0.05:
+                x, h, z = tx + t * (px - tx), th + t * (ph - th), tz + t * (pz - tz)
+                if h + y0 <= ymax and 8 <= x <= Wb - 8 and 8 <= z <= Db - 8:
+                    break
+                t -= 0.02
+            px, ph, pz = x, h, z
         dx, dy, dz = tx - px, th - ph, tz - pz
+        if math.hypot(dx, dz) < 2:   # standing on the target itself: look the way the view does
+            dx, dz = tx - v["pos"][0], tz - v["pos"][2]
         yaw = math.degrees(math.atan2(-dx, dz))
         pitch = -math.degrees(math.atan2(dy, math.hypot(dx, dz)))
-        out.append(dict(id=key, name=v.get("label", key), x=round(px, 1), y=round(ph + y0, 1), z=round(pz, 1),
+        y = ph + y0
+        if feet is not None:
+            y, pitch = float(feet + y0), max(-40.0, min(10.0, pitch))
+        out.append(dict(id=key, name=v.get("label", key), x=round(px, 1), y=round(y, 1), z=round(pz, 1),
                         yaw=round(yaw, 1), pitch=round(pitch, 1), aliases=ALIASES.get(key, [])))
     bar = meta.get("sidequest")
     if bar and bar.get("door"):  # /bar: on the pavement at the bar's door, facing it
