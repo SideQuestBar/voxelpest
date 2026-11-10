@@ -23,6 +23,7 @@ import { loadMeta, MAT, type Label, type V3, type View } from './meta';
 import { budapestDay, dateOf, dayName, loadClimate, parseDay, snowy, yearDays } from './season';
 import { desktop, noLinks, stripLinks } from './ui/desktop';
 import { fullscreenButton } from './ui/fullscreen';
+import { padCursor } from './ui/cursor';
 import { Labels } from './ui/labels';
 import { Locate } from './ui/locate';
 import { Menu, type MenuRow } from './ui/menu';
@@ -455,6 +456,7 @@ input.onPad = (on) => {
 // the controller's buttons that work in every mode: View cycles the modes, Menu opens the menu (places, time and
 // weather, the bar, help), which then has the controller to itself for the frame
 const MODES: Mode[] = ['map', 'walk', 'drive'];
+const cursor = padCursor();
 function padButtons() {
   if (!input.pad.on) return;
   if (menu.open) {
@@ -500,6 +502,7 @@ function frame(now: number) {
   last = now;
   look.time.value += dt;
   input.poll();
+  cursor(input.pad);
   padButtons();
   // the sticks, triggers and buttons don't move the map or the vehicle behind the menu
   if (menu.open) input.mute();
