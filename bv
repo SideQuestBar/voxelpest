@@ -1,0 +1,270 @@
+#!/usr/bin/env bash
+# bv: one entry point for Budapest in voxels. `./bv help` lists the commands.
+set -euo pipefail
+cd "$(dirname "$(readlink -f "$0")")"
+ROOT=$PWD
+CONF_DIR=${XDG_CONFIG_HOME:-$HOME/.config}/voxelpest
+PARTS_GLOB="web/public/voxelpest-data.tar.gz.part-*"
+DATA=web/public/data
+
+say() { printf '\033[1m== %s\033[0m\n' "$*"; }
+die() { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+usage() {
+    cat <<'EOF2'
+Budapest in voxels: the web viewer and the Minecraft server are two separate deployments built from one map.
+
+  ./bv setup                check the tools, install the Python and web dependencies, unpack the map data
+
+The map data (shared by both)
+  ./bv unpack               unpack the shipped map (web/public/*.part-*) into web/public/data
+  ./bv map                  rebuild the map from its sources: download (cached), prepare, voxelize. ~30 min, 7 GB RAM
+  ./bv voxelize             rebuild from the cached sources only (after changing scripts/), ~20-28 min
+  ./bv bench NAME           one test window, e.g. ./bv bench parliament (data/debug/bench_NAME.npy)
+  ./bv pack                 pack web/public/data into the shipped parts (19 MB each, for git)
+
+The web viewer
+  ./bv web                  run it at http://localhost:5173 (add ?minecraft=1 to see the Minecraft card)
+  ./bv site                 build the static site into web/dist
+  ./bv check                type-check it
+  ./bv publish-web [--no-build]
+                            publish it to Cloudflare Pages (settings: ~/.config/voxelpest/web.env)
+
+The desktop app (the viewer in an Electron window, for WebGPU)
+  ./bv desktop              build it for Linux -> build/voxelpest-VERSION-ARCH.AppImage (the site built as ./bv site)
+  ./bv desktop dev [ARG=VALUE...]
+                            run it on ./bv web's dev server, in a window (F12: devtools)
+
+The Minecraft server
+  ./bv minecraft            the world from the map data -> build/minecraft (~3 min); the plugin too if its sources changed
+  ./bv plugin               rebuild the plugin (JDK 25 + Maven) -> minecraft/voxelpest.jar
+  ./bv server               run it here in Docker or podman, as on the real server: join at localhost, Bedrock on
+                            port 19132 (./bv server stop | console | logs)
+  ./bv publish-minecraft [--no-build | --config-only]
+                            publish it (settings: ~/.config/voxelpest/minecraft.env)
+
+Optional local settings: ~/.config/voxelpest/env (MAPILLARY_TOKEN for the street furniture on a fresh `map`;
+MEMORY, ONLINE_MODE, MC_VERSION for the local server; MINECRAFT=true shows the Minecraft card in ./bv web and site).
+EOF2
+}
+
+load_env() {
+    if [ -f "$CONF_DIR/env" ]; then set -a; . "$CONF_DIR/env"; set +a; fi
+}
+
+# a JDK 25 or newer: JAVA_HOME if it is one, else the first under /usr/lib/jvm or /opt (with javac: Arch's
+# jre25-openjdk installs a runtime alone into the same /usr/lib/jvm/java-25-openjdk, and Maven can't compile with it)
+find_java() {
+    local d v
+    for d in "${JAVA_HOME:-}" /usr/lib/jvm/java-25-openjdk /usr/lib/jvm/* /opt/jdk* /opt/java/*; do
+        [ -n "$d" ] && [ -x "$d/bin/java" ] && [ -x "$d/bin/javac" ] || continue
+        v=$("$d/bin/java" -XshowSettings:properties -version 2>&1 | sed -n 's/.*java\.specification\.version = \([0-9]*\).*/\1/p')
+        if [ -n "$v" ] && [ "$v" -ge 25 ]; then echo "$d"; return 0; fi
+    done
+    return 1
+}
+
+need_java() {
+    JAVA_HOME=$(find_java) || die "A JDK 25 or newer is needed to build the plugin (Paper 26.x). On Arch/CachyOS:
+sudo pacman -S jdk25-openjdk. The system's default Java can stay as it is."
+    export JAVA_HOME
+}
+
+py() { PYTHONPATH=scripts uv run python "$@"; }
+
+# node_modules of web/ or desktop/, installed again whenever bun.lock is newer than the last install
+js_deps() {
+    have bun || die "Bun is needed: curl -fsSL https://bun.sh/install | bash"
+    if [ ! -f "$1/node_modules/.bv-installed" ] || [ "$1/bun.lock" -nt "$1/node_modules/.bv-installed" ]; then
+        say "$2"
+        (cd "$1" && bun install --frozen-lockfile && touch node_modules/.bv-installed)
+    fi
+}
+
+web_deps() {
+    js_deps web "web dependencies"
+}
+
+desktop_deps() {
+    js_deps desktop "desktop dependencies"
+}
+
+# the viewer as a desktop app (desktop/, Electron, for WebGPU): the site as ./bv site builds it, so with the same map
+# and settings (MINECRAFT, BAR_URL, ...) as a publish-web, packed into an AppImage by electron-builder
+desktop() {
+    desktop_deps
+    case "${1:-build}" in
+        build) ;;
+        dev) shift; desktop_dev "$@"; return ;;
+        *) die "./bv desktop [dev [ARG=VALUE...]]" ;;
+    esac
+    "$ROOT/bv" site
+    say "desktop app"
+    (cd desktop && bun test && bun run dist)
+    local version out
+    version=$(bun -p "require('./desktop/package.json').version")
+    out=build/voxelpest-$version-$(uname -m).AppImage
+    mkdir -p build
+    cp "desktop/out/voxelpest-$version-$(uname -m).AppImage" "$out"
+    say "desktop app: $out ($(du -h "$out" | cut -f1))"
+}
+
+# the app on the viewer's dev server (a ./bv web already running is used as it is, else one is started and stopped
+# with it), in a window, F12 for devtools; arguments go to the page as in the built app (view=parliament ...)
+desktop_dev() {
+    local url=http://localhost:5173 vite=
+    if ! curl -s -o /dev/null "$url/"; then
+        say "dev server"
+        # in a session of its own, so that it can be stopped whole (bv, bun, vite)
+        setsid "$ROOT/bv" web --strictPort &
+        vite=$!
+        trap '[ -z "$vite" ] || kill -- -"$vite" 2>/dev/null || true' EXIT
+        until curl -s -o /dev/null "$url/"; do
+            kill -0 "$vite" 2>/dev/null || die "the dev server didn't start"
+            sleep 0.5
+        done
+    fi
+    (cd desktop && VOXELPEST_DEV_URL=$url bunx electron . "$@") || true
+}
+
+data_ready() { [ -f "$DATA/meta.json" ]; }
+
+unpack() {
+    local parts
+    parts=$(ls $PARTS_GLOB 2>/dev/null || true)
+    [ -n "$parts" ] || { data_ready && return 0; die "no map data: run ./bv map to build it"; }
+    if [ "${1:-}" = force ] || ! data_ready || [ -n "$(find $parts -newer "$DATA/meta.json")" ]; then
+        say "unpacking the map data"
+        rm -rf "$DATA"
+        cat $parts | tar xz -C web/public
+        touch "$DATA/meta.json"
+    fi
+}
+
+pack() {
+    data_ready || die "nothing to pack: $DATA/meta.json is missing"
+    say "packing $DATA"
+    local tmp
+    tmp=$(mktemp -d)
+    tar czf "$tmp/data.tar.gz" -C web/public data
+    split -b 19m "$tmp/data.tar.gz" "$tmp/voxelpest-data.tar.gz.part-"
+    rm -f $PARTS_GLOB
+    mv "$tmp"/voxelpest-data.tar.gz.part-* web/public/
+    rm -rf "$tmp"
+    touch "$DATA/meta.json"
+    ls -lh $PARTS_GLOB
+}
+
+plugin_stale() {
+    [ ! -f minecraft/voxelpest.jar ] ||
+        [ -n "$(find minecraft/plugin/src minecraft/plugin/pom.xml -newer minecraft/voxelpest.jar -type f 2>/dev/null | head -1)" ]
+}
+
+plugin() {
+    need_java
+    have mvn || die "Maven is needed to build the plugin: sudo pacman -S maven"
+    say "plugin (JAVA_HOME=$JAVA_HOME)"
+    (cd minecraft/plugin && mvn -q -B package)
+    cp minecraft/plugin/target/voxelpest.jar minecraft/voxelpest.jar
+}
+
+minecraft_world() {
+    unpack
+    say "Minecraft world -> build/minecraft"
+    uv run python scripts/minecraft.py
+    if plugin_stale; then
+        if have mvn && find_java >/dev/null; then plugin; else echo "(the plugin's sources are newer than its jar; ./bv plugin rebuilds it)"; fi
+    fi
+}
+
+eula() {
+    local mark=build/mc-data/.eula-accepted
+    [ -f "$mark" ] || [ "${EULA:-}" = true ] && { mkdir -p build/mc-data; touch "$mark"; return 0; }
+    [ -t 0 ] || die "set EULA=true to agree to the Minecraft EULA (https://aka.ms/MinecraftEULA)"
+    read -r -p "Do you agree to the Minecraft EULA (https://aka.ms/MinecraftEULA)? [y/N] " a
+    case "$a" in y|Y|yes) mkdir -p build/mc-data; touch "$mark" ;; *) die "the server can't run without it" ;; esac
+}
+
+compose_mc() { docker compose -f minecraft/docker-compose.yml "$@"; }
+
+# the Minecraft server here, in the same container as on the real one (minecraft/docker-compose.yml)
+server() {
+    have docker || die "Docker (or podman) is needed to run the server: the same container as on the real one"
+    case "${1:-start}" in
+        start) ;;
+        stop) compose_mc down; return ;;
+        console) exec docker exec -it voxelpest-minecraft rcon-cli ;;
+        logs) exec docker logs -f voxelpest-minecraft ;;
+        *) die "./bv server [stop | console | logs]" ;;
+    esac
+    load_env
+    [ -f build/minecraft/map.yml ] || minecraft_world
+    eula
+    mkdir -p build/minecraft/plugins build/mc-data
+    cp minecraft/voxelpest.jar build/minecraft/plugins/
+    [ -f build/minecraft/plugins/config.yml ] || cp minecraft/plugin/src/main/resources/config.yml build/minecraft/plugins/
+    # the server's files in build/mc-data stay yours: rootless podman maps the container's root to you
+    local uid gid
+    if docker --version 2>/dev/null | grep -qi podman; then uid=0 gid=0; else uid=$(id -u) gid=$(id -g); fi
+    say "Minecraft server: join at localhost (Bedrock: this machine's address, port 19132)"
+    EULA=true MEMORY=${MEMORY:-2G} MAP_URL=${MAP_URL:-http://localhost:5173} \
+        MC_MAP=$ROOT/build/minecraft MC_DATA=$ROOT/build/mc-data MC_UID=$uid MC_GID=$gid compose_mc up -d
+    echo "  ./bv server console   its console (rcon-cli)"
+    echo "  ./bv server stop      stop it"
+    echo "  its log follows; Ctrl-C leaves the server running. A new map from ./bv minecraft restarts it on that map."
+    exec docker logs -f voxelpest-minecraft
+}
+
+setup() {
+    say "tools"
+    local ok=1
+    for t in uv node bun; do
+        if have "$t"; then printf '  %-6s %s\n' "$t" "$("$t" --version 2>&1 | head -1)"; else printf '  %-6s MISSING\n' "$t"; ok=0; fi
+    done
+    if j=$(find_java); then printf '  %-6s %s\n' java "$j"; else printf '  %-6s no Java 25+ (only needed to rebuild the Minecraft plugin: sudo pacman -S jdk25-openjdk)\n' java; fi
+    if have mvn; then printf '  %-6s %s\n' mvn "$(mvn -v 2>/dev/null | head -1)"; else printf '  %-6s not found (only needed to rebuild the plugin: sudo pacman -S maven)\n' mvn; fi
+    have docker || printf '  %-6s not found (only needed for ./bv server: Docker or podman)\n' docker
+    for t in rsync ssh; do have "$t" || printf '  %-6s not found (only needed for ./bv publish-minecraft)\n' "$t"; done
+    [ "$ok" = 1 ] || die "install the missing tools first (uv: curl -LsSf https://astral.sh/uv/install.sh | sh; bun: curl -fsSL https://bun.sh/install | bash)"
+    say "Python dependencies"
+    uv sync
+    web_deps
+    # files the viewer's rewrite left behind as empty stubs
+    local f n=0
+    for f in web/src/*.ts; do
+        if head -1 "$f" | grep -q '^// Obsolete: the viewer was rewritten'; then rm -f "$f"; n=$((n + 1)); fi
+    done
+    [ "$n" = 0 ] || echo "  removed $n obsolete stub files from web/src"
+    unpack
+    if [ -f minecraft/deploy.env ] && [ ! -f "$CONF_DIR/web.env" ] && [ ! -f web/deploy/web.env ]; then
+        echo "  note: minecraft/deploy.env is the old combined setup; publishing now reads web.env and minecraft.env"
+        echo "        (web/deploy/web.env.example, minecraft/minecraft.env.example): copy its values over"
+    fi
+    say "ready: ./bv web for the viewer, ./bv server for the Minecraft server"
+}
+
+cmd=${1:-help}
+[ $# -gt 0 ] && shift
+case "$cmd" in
+    help|-h|--help) usage ;;
+    setup) setup ;;
+    web) unpack; web_deps; load_env; cd web && VITE_MINECRAFT="${MINECRAFT:-}" VITE_UMAMI_URL="${UMAMI_DEV:+${UMAMI_URL:-}}" VITE_UMAMI_ID="${UMAMI_DEV:+${UMAMI_ID:-}}" exec bun run dev "$@" ;;
+    site) unpack; web_deps; load_env
+          cd web && VITE_MINECRAFT="${MINECRAFT:-}" VITE_MC_ADDRESS="${MC_ADDRESS:-}" VITE_MC_STATUS="${MC_STATUS_URL:-}" \
+              VITE_BAR_URL="${BAR_URL:-}" VITE_UMAMI_URL="${UMAMI_URL:-}" VITE_UMAMI_ID="${UMAMI_ID:-}" exec bun run build ;;
+    check) web_deps; cd web && exec bun run check ;;
+    publish-web) unpack; exec bash scripts/publish_web.sh "$@" ;;
+    desktop) desktop "$@" ;;
+    unpack) unpack force ;;
+    pack) pack ;;
+    map) load_env; say "the map from its sources (downloads are cached in data/raw)"; sh scripts/build_data.sh ;;
+    voxelize) py scripts/voxelize.py ;;
+    bench) [ $# -ge 1 ] || die "./bv bench NAME (parliament, chain, opera, ... see CLAUDE.md), or NAME@x:y"
+           BENCH="$1" py scripts/voxelize.py ;;
+    minecraft) minecraft_world ;;
+    plugin) plugin ;;
+    server) server "$@" ;;
+    publish-minecraft) unpack; exec bash scripts/publish_minecraft.sh "$@" ;;
+    *) usage; die "unknown command: $cmd" ;;
+esac

@@ -1,0 +1,15 @@
+[project]
+name = "voxelpest-data"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.1",
+    "osmium>=4.0",
+    "pillow>=11.0",
+    "pyproj>=3.7",
+    "rasterio>=1.4",
+    "requests>=2.32",
+    "scipy>=1.14",
+    "shapely>=2.0",
+    "webcolors>=24.0",
+]

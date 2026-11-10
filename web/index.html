@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Budapest in voxels</title>
+  <meta name="description" content="Central Budapest in half-metre voxels, built from open data: fly over it, walk its streets, drive a taxi. Made by SideQuest Bar." />
+  <meta name="theme-color" content="#c9d3dc" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Budapest voxels" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+  <style>
+    /* the loading screen, here so it shows before the code has loaded */
+    html, body { margin: 0; background: #c9d3dc; }
+    #loading { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      background: linear-gradient(#c9d3dc, #dde1dd 55%, #ebe4d6); color: #1d2328; font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
+      transition: opacity .6s ease, visibility 0s .6s; }
+    #loading.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    #loading .ld { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(560px, 86vw); margin-top: -4vh; }
+    #loading canvas { display: block; max-width: 100%; image-rendering: pixelated; }
+    #loading h1 { margin: 6px 0 0; font-size: clamp(22px, 5.4vw, 30px); letter-spacing: -0.01em; text-align: center; }
+    #loading h1 em { font-style: normal; font-weight: 400; opacity: .8; }
+    #loading .ld-bar { width: min(280px, 70vw); height: 6px; border-radius: 3px; background: rgba(29, 35, 40, .12); overflow: hidden; }
+    #loading .ld-bar i { display: block; height: 100%; background: #b5513f; border-radius: 3px; transform: scaleX(0); transform-origin: left;
+      transition: transform .25s ease-out; }
+    #loading.failed .ld-bar i { background: #8a2a1e; }
+    #loading-text { min-height: 18px; opacity: .72; font-variant-numeric: tabular-nums; text-align: center; padding: 0 16px; }
+    #loading .ld-by { position: absolute; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 8px;
+      color: inherit; text-decoration: none; opacity: .8; }
+    #loading .ld-by img { height: 26px; }
+    #loading .ld-by b { color: #282949; }
+    @media (max-height: 420px) { #loading .ld { gap: 8px; width: min(520px, 70vw); margin-top: -24px; } #loading .ld-by { bottom: calc(8px + env(safe-area-inset-bottom, 0px)); } }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="labels"></div>
+
+  <header id="top">
+    <div id="brand">
+      <h1><span data-t="title">Budapest</span> <em data-t="titleTail">in voxels</em></h1>
+    </div>
+    <div id="switches">
+      <div id="modes" class="seg" role="group">
+        <button data-mode="map" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3l4.5-1.5 5 2L15 2v11l-4.5 1.5-5-2L1 14z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 1.5v11M10.5 3.5v11" stroke="currentColor" stroke-width="1.2"/></svg><span data-t="modeMap">Map</span></button>
+        <button data-mode="walk"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="9" cy="2.6" r="1.6" fill="currentColor"/><path d="M8.6 5.2L6.4 9l2.6 1.8L7.8 15M8.6 5.2l2.6 2.6 2.2.4M6.4 9L4 15M8.6 5.2L5.6 6.4 4.2 8.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="modeWalk">Walk</span></button>
+        <button data-mode="drive"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 10.5V8l1.6-3.6h8.8L14 8v2.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="4.6" cy="11.4" r="1.5" fill="currentColor"/><circle cx="11.4" cy="11.4" r="1.5" fill="currentColor"/><rect x="6.4" y="2.4" width="3.2" height="1.4" rx=".3" fill="currentColor"/></svg><span data-t="modeDrive">Drive</span></button>
+      </div>
+      <div id="vehicles" class="seg" role="group" aria-label="Vehicle">
+        <button data-vehicle="taxi" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 10.5V8l1.6-3.6h8.8L14 8v2.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.6" cy="11.4" r="1.5" fill="currentColor"/><circle cx="11.4" cy="11.4" r="1.5" fill="currentColor"/><rect x="6.4" y="2.4" width="3.2" height="1.4" rx=".3" fill="currentColor"/></svg><span data-t="vTaxi">Taxi</span></button>
+        <button data-vehicle="trabant" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.4 12.4V7.6c0-.6.3-1 .9-1.2l1.6-.6 1.1-2.6h4l1.1 2.6 1.6.6c.6.2.9.6.9 1.2v4.8M1.6 11h12.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.7" cy="8.6" r="1.25" fill="currentColor"/><circle cx="11.3" cy="8.6" r="1.25" fill="currentColor"/><path d="M6.9 8.2h2.2M6.9 9.2h2.2" stroke="currentColor" stroke-width="1"/></svg><span data-t="vTrabant">Trabant 601</span></button>
+        <button data-vehicle="police" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11V8.4l1.6-3.2h8.8L14 8.4V11z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.6" cy="11.6" r="1.5" fill="currentColor"/><circle cx="11.4" cy="11.6" r="1.5" fill="currentColor"/><rect x="4.4" y="2" width="3.4" height="1.9" rx=".5" fill="#3a66ff"/><rect x="8.2" y="2" width="3.4" height="1.9" rx=".5" fill="#e0352b"/></svg><span data-t="vPolice">Police</span></button>
+        <button data-vehicle="bubi" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.6" cy="10.9" r="2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.4" cy="10.9" r="2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.6 10.9l2.7-4.6h4.3l1.8 4.6M6.3 6.3l2.4 4.6H3.6M10.6 6.3l.5-2h1.5M5.4 4.6h1.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="vBubi">Bubi</span></button>
+        <button data-vehicle="bus" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.4" y="2.8" width="13.2" height="8.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.4 7.2h13.2M5.8 2.8v4.4M10.2 2.8v4.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.6" cy="12" r="1.4" fill="currentColor"/><circle cx="11.4" cy="12" r="1.4" fill="currentColor"/></svg><span data-t="vBus">BKK bus</span></button>
+        <button id="flash-btn" aria-pressed="false" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.8 12.2V8.6a3.2 3.2 0 016.4 0v3.6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.2 12.6h9.6M8 1.8v1.7M3.1 4l1.2 1.2M12.9 4l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div id="lang" class="seg" role="group" aria-label="Language">
+        <button data-lang="en" lang="en">EN</button><button data-lang="hu" lang="hu">HU</button>
+      </div>
+      <button id="fs-btn" class="tool square" hidden><svg class="enter" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="exit" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </header>
+
+  <aside id="promo">
+    <div class="sq-row">
+      <a id="sq" href="https://side-quest.bar" target="_blank" rel="noopener">
+        <img src="sidequest/mug.png" alt="" />
+        <span><small>made by</small><b>SideQuest Bar</b><em>gaming bar · Klauzál u. 26-28</em></span>
+      </a>
+      <button id="sq-where" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15s-5-4.6-5-8.6a5 5 0 0110 0C13 10.4 8 15 8 15z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="6.4" r="1.8" fill="currentColor"/></svg><span>on the map</span></button>
+    </div>
+    <button id="mc" aria-expanded="false" aria-controls="mc-panel">
+      <svg class="mc-block" viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges">
+        <rect width="8" height="8" fill="#866043"/><rect width="8" height="3" fill="#5d9b3a"/>
+        <rect y="3" width="1" height="1" fill="#5d9b3a"/><rect x="3" y="3" width="2" height="1" fill="#5d9b3a"/>
+        <rect x="7" y="3" width="1" height="2" fill="#5d9b3a"/><rect x="1" y="1" width="1" height="1" fill="#79c05a"/>
+        <rect x="5" width="1" height="1" fill="#79c05a"/><rect x="2" y="5" width="1" height="1" fill="#6b4a32"/>
+        <rect x="5" y="6" width="1" height="1" fill="#6b4a32"/><rect x="6" y="4" width="1" height="1" fill="#9a7352"/>
+      </svg>
+      <span class="mc-text"><b>Play in Minecraft</b><small id="mc-count">Java &amp; Bedrock</small></span>
+    </button>
+    <div id="mc-panel" hidden></div>
+  </aside>
+
+  <nav id="places">
+    <button id="places-toggle" aria-expanded="false" aria-controls="places-panel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15s-5-4.6-5-8.6a5 5 0 0110 0C13 10.4 8 15 8 15z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="6.4" r="1.8" fill="currentColor"/></svg><span data-t="places">Places</span></button>
+    <div id="places-panel" hidden>
+      <button id="bar-go" class="bar-go"><img src="sidequest/mug.png" alt="" /><span data-t="goBar">Go to SideQuest Bar</span></button>
+      <input id="places-search" type="text" autocomplete="off" spellcheck="false" />
+      <ul id="places-list"></ul>
+    </div>
+  </nav>
+
+  <footer id="bar">
+    <div id="time-pop">
+      <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+        <symbol id="i-moon" viewBox="0 0 16 16"><path d="M10.8 1.6A6.6 6.6 0 1014.4 11 5.4 5.4 0 0110.8 1.6z" fill="currentColor"/></symbol>
+        <symbol id="i-flake" viewBox="0 0 16 16"><path d="M8 1v14M2 4.5l12 7M2 11.5l12-7M6 2.4L8 4l2-1.6M6 13.6L8 12l2 1.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-cloud" viewBox="0 0 16 16"><path d="M5 13a3 3 0 01-.4-5.97 4 4 0 017.6-.6A3 3 0 0112 13z" fill="currentColor"/></symbol>
+        <symbol id="i-leaf" viewBox="0 0 16 16"><path d="M6.2 9.8C5.4 5.4 8.6 2.6 13.6 2.4c.2 5-2.8 8.2-7.4 7.4z" fill="currentColor"/><path d="M2.4 13.6l6.8-6.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+        <symbol id="i-twig" viewBox="0 0 16 16"><path d="M8 15V2.6M8 10.4L4.2 6.6V3.4M8 8.2l3.6-3.6M11.6 4.6l.9-2.2M4.2 6.6l-2 .4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-rain" viewBox="0 0 16 16"><path d="M4.8 9.6a2.5 2.5 0 01-.3-4.98 3.4 3.4 0 016.5-.5 2.5 2.5 0 01.2 5.48z" fill="currentColor"/><path d="M5.6 11.6l-.9 2.6M8.6 11.6l-.9 2.6M11.6 11.6l-.9 2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+      </svg>
+      <button id="time-btn" class="tool" aria-expanded="false" aria-controls="time-card" data-w="clear">
+        <svg class="sun" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-sun"/></svg>
+        <svg class="moon" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="cloud" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-cloud"/></svg>
+        <svg class="rain" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-rain"/></svg>
+        <svg class="flake" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-flake"/></svg>
+        <span id="time-date" hidden></span><span id="time-now">12:00</span>
+      </button>
+      <div id="time-card" role="group" aria-labelledby="time-title" hidden>
+        <div class="time-head">
+          <b id="time-title" data-t="dateTime">Date and time</b>
+          <button id="live" aria-pressed="false"><i aria-hidden="true"></i><span data-t="live">Live</span></button>
+        </div>
+        <div id="date" class="seg" role="slider" tabindex="0" aria-label="Date" aria-valuemin="1" aria-valuemax="365" aria-valuenow="172" aria-valuetext="21 June">
+          <span class="year" aria-hidden="true"></span>
+          <span class="thumb"><svg class="leaf" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-leaf"/></svg><svg class="twig" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-twig"/></svg><output id="date-label">21 Jun</output></span>
+        </div>
+        <div id="hour" class="seg" role="slider" tabindex="0" aria-label="Time of day" aria-valuemin="0" aria-valuemax="24" aria-valuenow="12" aria-valuetext="12:00">
+          <span class="day" aria-hidden="true"></span>
+          <span class="tick" style="--h: 0">0</span><span class="tick" style="--h: 6">6</span><span class="tick" style="--h: 12">12</span><span class="tick" style="--h: 18">18</span><span class="tick" style="--h: 24">24</span>
+          <span class="thumb"><svg class="sun" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-sun"/></svg><svg class="moon" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-moon"/></svg><output id="hour-label">12:00</output></span>
+        </div>
+        <div id="weather" class="seg" role="group" aria-label="Weather">
+          <button data-w="clear" aria-pressed="true"><svg class="sun" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-sun"/></svg><svg class="moon" viewBox="0 0 16 16" aria-hidden="true"><use href="#i-moon"/></svg><span data-t="clear">Clear</span></button>
+          <button data-w="cloudy" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="#i-cloud"/></svg><span data-t="cloudy">Cloudy</span></button>
+          <button data-w="rain" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="#i-rain"/></svg><span data-t="rain">Rain</span></button>
+          <button data-w="snow" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="#i-flake"/></svg><span data-t="snow">Snow</span></button>
+        </div>
+      </div>
+    </div>
+    <button id="names" class="tool toggle" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 2.6h11.6v7H9.4L8 12.4 6.6 9.6H2.2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path class="on" d="M4.6 5h6.8M5.6 7.2h4.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="off" d="M2 14L14 1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span data-t="names">Names</span></button>
+    <button id="tut-btn" class="tool round" aria-label="How to move round" title="How to move round">?</button>
+    <button id="about-btn" class="tool"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="4.9" r="1" fill="currentColor"/><path d="M8 7.2v4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span data-t="about">About</span></button>
+    <span id="credits"></span>
+  </footer>
+  <div id="status" aria-hidden="true"><span class="blocks"><i></i><i></i><i></i></span><span class="txt"></span><span id="tilebar"><i></i></span></div>
+  <button id="locate" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle class="dot" cx="8" cy="8" r="2" fill="currentColor"/><path d="M8 .8v2.6M8 12.6v2.6M.8 8h2.6M12.6 8h2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+
+  <div id="hud" hidden><b id="speed">0</b><span data-t="kmh">km/h</span></div>
+  <div id="hint" hidden></div>
+  <div id="toast" hidden></div>
+  <div id="crosshair"></div>
+  <div id="touch" hidden>
+    <div class="stick"><div class="knob"></div></div>
+    <div class="look"></div>
+    <div class="pedals"><button class="brake" aria-label="brake">◼</button><button class="gas" aria-label="gas">▲</button></div>
+  </div>
+
+  <dialog id="about">
+    <h2><span data-t="title">Budapest</span> <em data-t="titleTail">in voxels</em></h2>
+    <div id="about-text"></div>
+    <button id="install-btn" hidden></button>
+    <button id="about-close" data-t="close">Close</button>
+  </dialog>
+
+  <div id="loading">
+    <div class="ld">
+      <canvas aria-hidden="true"></canvas>
+      <h1><span data-t="title">Budapest</span> <em data-t="titleTail">in voxels</em></h1>
+      <div class="ld-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="loading-text"><i></i></div>
+      <div id="loading-text" data-t="loading">Loading the map…</div>
+    </div>
+    <a class="ld-by" href="https://side-quest.bar" target="_blank" rel="noopener"><img src="sidequest/mug.png" alt="" /><span><span data-t="sqMadeBy">made by</span> <b>SideQuest Bar</b></span></a>
+  </div>
+  <script>
+    // The loading screen: Budapest's skyline (Buda Castle, the Chain Bridge, the Parliament) built block by block as the
+    // map loads. main.ts reports its progress through window.bvLoader; until that code has arrived, a slow trickle.
+    (() => {
+      const ART = [
+        '                                                      Y         ',
+        '                                                      S         ',
+        '       Y                                              S         ',
+        '       g                                              r         ',
+        '       G                                             RRR        ',
+        '      GGG                                            RRR        ',
+        '     gGGGg                                          RrRrR       ',
+        '     SSSSS                                          RrRrR       ',
+        '     SDSDS                                        YRrRRRrRY     ',
+        '     SSSSS                                  R  R  SRrRRRrRS R  R',
+        ' sssssssssssss                              S  S  SSSSSSSSS S  S',
+        ' SSSSSSSSSSSSS    ssssss          ssssss    S sS  SDSDSDSDS Ss S',
+        ' SDSDSDSDSDSDS     SSSS            SSSS     S sS  SSSSSSSSS Ss S',
+        ' SDSDSSSSSDSDS    DSSSSD          DSSSSD    rRRrRRrRRrRRrRRrRRrR',
+        ' SSSSSSSSSSSSS   D SSSS            SSSS D   RRRRRRRRRRRRRRRRRRRR',
+        'HHHHHHHHHHH        SDDS D        D SDDS  D  SSSSSSSSSSSSSSSSSSSS',
+        'HHHHHHHHHHHH    D  SDDS  D      D  SDDS   D SDSDSDSDSDSDSDSDSDSD',
+        'HhHHHHHHHHhHH  D   SDDS   D    D   SDDS     SSSSSSSSSSSSSSSSSSSS',
+        'HHHHHHhHHHHHHH     SDDS    DDDD    SDDS    DSDSDSDSDSDSDSDSDSDSD',
+        'HHHhHHHHHHHHhHD    SDDS            SDDS     SSSSSSSSSSSSSSSSSSSS',
+        'HHHHHhHHHhHHHHDDDDDSDDSDDDDDDDDDDDDSDDSDDDDDSSSSSSSSSSSSSSSSSSSS',
+        'HHhHHHHhHHHHHHhHH  SSSS            SSSS     ssssssssssssssssssss',
+        'WWWWWWWWWWWWWWWWWWWssssWWWWWWWWWWWWssssWWWWWWWWWWWWWWWWWWWWWWWWW',
+        'WWWwwWWWWWWWWWWWWWWssssWWwwWWWWWWWWssssWWWWWWWWWWWWWwwWWWWWWWWWW',
+        'WWWWWWWWWWWwwWWWWWWssssWWWWWWWWWWWWssssWWWwwWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWwWssssWWWWWWWwwWWWssssWWWWWWWWwWWWWWWWWWWWwwWWW',
+      ];
+      const COL = { W: '#3d6f8a', w: '#6d9db5', H: '#73925a', h: '#5d7c47', S: '#ece0c2', s: '#cdb994', R: '#b5513f', r: '#93412f',
+        G: '#6aa893', g: '#4e8a75', D: '#2e3840', Y: '#ffc948' };
+      const root = document.getElementById('loading'), cv = root.querySelector('canvas'), g = cv.getContext('2d');
+      const bar = root.querySelector('.ld-bar'), fill = bar.firstElementChild, text = document.getElementById('loading-text');
+      // the language, by i18n.ts's rule (?lang=, the saved choice, then the browser's), for the words shown before it loads
+      let lang = new URLSearchParams(location.search).get('lang');
+      if (lang !== 'en' && lang !== 'hu') {
+        try { lang = localStorage.getItem('voxelpest-lang'); } catch { lang = null; }
+        if (lang !== 'en' && lang !== 'hu') lang = (navigator.languages || [navigator.language]).some((l) => /^hu/i.test(l)) ? 'hu' : 'en';
+      }
+      if (lang === 'hu') {
+        document.documentElement.lang = 'hu';
+        root.querySelector('[data-t=titleTail]').textContent = 'voxelekben';
+        root.querySelector('[data-t=sqMadeBy]').textContent = 'készítette';
+        text.textContent = 'Töltődik a térkép…';
+      }
+      // bottom up, roughly left to right: the Parliament's spire is among the last
+      const blocks = [];
+      ART.forEach((row, y) => [...row].forEach((c, x) => { if (c !== ' ') blocks.push({ x, y, c, k: ART.length - y + Math.random() * 3 + x / 40, t: 0 }); }));
+      blocks.sort((a, b) => a.k - b.k);
+      const n = blocks.length, DROP = 260, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const baked = document.createElement('canvas'), bg = baked.getContext('2d');
+      let s = 1, placed = 0, settled = 0, target = 0, pct = -1, finish = null, failed = false;
+      const t0 = performance.now();
+      let last = t0;
+      const draw = (c, b, dy) => {
+        const e = Math.max(1, s >> 3), q = s - e, x = b.x * s, y = b.y * s + dy;
+        c.fillStyle = COL[b.c]; c.fillRect(x, y, q, q);
+        c.fillStyle = 'rgba(255,255,255,.22)'; c.fillRect(x, y, q, e);
+        c.fillStyle = 'rgba(0,0,0,.13)'; c.fillRect(x, y + q - e, q, e);
+      };
+      const size = () => {
+        const dpr = Math.min(devicePixelRatio || 1, 3), w = Math.min(560, innerWidth * 0.86, innerHeight * 1.1);
+        s = Math.max(2, Math.floor((w * dpr) / ART[0].length));
+        cv.width = baked.width = s * ART[0].length;
+        cv.height = baked.height = s * ART.length;
+        cv.style.width = `${cv.width / dpr}px`;
+        for (let i = 0; i < settled; i++) draw(bg, blocks[i], 0);
+      };
+      size();
+      addEventListener('resize', size);
+      const tick = (now) => {
+        const dt = Math.min(Math.max(now - last, 16), 1000);
+        last = now;
+        if (!finish && !failed) target = Math.max(target, 0.1 * (1 - Math.exp(-(now - t0) / 2500)));
+        // laid at a pace in time, not per frame: the whole skyline in 1.5 s at most, the rest in 0.45 s once done
+        const want = Math.round(target * n);
+        for (let k = Math.ceil((n * dt) / (finish ? 450 : 1500)); placed < want && k > 0; k--) blocks[placed++].t = now;
+        while (settled < placed && (still || dt >= DROP || now - blocks[settled].t >= DROP)) draw(bg, blocks[settled++], 0);
+        g.clearRect(0, 0, cv.width, cv.height);
+        g.drawImage(baked, 0, 0);
+        for (let i = settled; i < placed; i++) {
+          const e = Math.min(1, (now - blocks[i].t) / DROP);
+          g.globalAlpha = e;
+          draw(g, blocks[i], -(1 - e) * (1 - e) * s * 3);
+        }
+        if (placed < n && !finish && !failed) {  // the next block, waiting to be laid
+          g.globalAlpha = still ? 0.3 : 0.22 + 0.2 * Math.sin(now / 150);
+          draw(g, blocks[placed], 0);
+        }
+        g.globalAlpha = 1;
+        const p = Math.round((100 * placed) / n);
+        if (p !== pct) { pct = p; fill.style.transform = `scaleX(${placed / n})`; bar.setAttribute('aria-valuenow', String(p)); }
+        if (finish && settled === n) {
+          root.classList.add('hidden');
+          removeEventListener('resize', size);
+          setTimeout(() => { root.remove(); finish(); }, 600);
+          return;
+        }
+        if (!failed) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      window.bvLoader = {
+        progress(p, label) {
+          target = Math.max(target, Math.min(p, 1));
+          if (label && text.textContent !== label) text.textContent = label;
+        },
+        done(then) {
+          if (finish) return;
+          finish = then || (() => {});
+          target = 1;
+        },
+        fail(label) {
+          failed = true;
+          root.classList.add('failed');
+          text.textContent = label;
+        },
+      };
+    })();
+  </script>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+# voxelpest — the SideQuest Bar's Budapest map.
+# landmarks.yml and map.yml next to this file are written by scripts/minecraft.py and copied here by the publish script.
+
+# On the server this file is read from map/plugins/config.yml, uploaded by scripts/publish_minecraft.sh from the project
+# (minecraft/plugin/src/main/resources/config.yml): edit it there and run ./bv publish-minecraft --config-only; the
+# server picks it up within 30 s.
+# MAP_URL, BAR_URL and MC_ADDRESS in minecraft.env override links.map, links.bar and status.address.
+
+world: world
+
+# Nobody without voxelpest.build can change a block: no breaking, placing, buckets, fire, explosions, liquid flow,
+# leaf decay, grass spreading or trampling. Players join in adventure mode, can't be hurt and never get hungry.
+protect: true
+
+# Flight is allowed from the moment you join (/fly toggles it); speed 1-10, /flyspeed changes it per player.
+fly-on-join: true
+fly-speed: 3
+
+# Where a first-time player starts, and where /spawn goes: a landmark id from landmarks.yml (flag: on Kossuth tér by
+# the flag, facing the Parliament), or "map" for map.yml's spawn (the same place).
+spawn: flag
+
+# real: Budapest's own clock (the sun sets over Buda when it does in town); day: always mid-morning; cycle: normal days.
+time: real
+time-zone: Europe/Budapest
+weather: clear   # clear | cycle
+
+# Players can't leave the map: at its edge they're turned back (a margin in blocks around map.yml's bounds).
+bounds-margin: 24
+
+# A small JSON endpoint for the web map's "Play in Minecraft" button: GET /status ->
+# {"online":3,"max":50,"version":"26.3","address":"mc.side-quest.bar"}, with CORS for any origin.
+status:
+  enabled: true
+  bind: 0.0.0.0
+  port: 8765
+  address: mc.side-quest.bar
+
+# A new map uploaded next to the server (scripts/publish_minecraft.sh) restarts it: players get a countdown, Docker starts the
+# server again and start.sh swaps the world in. The file to watch comes from $VOXELPEST_MAP_SOURCE (set by start.sh).
+update:
+  restart: true
+  source: ""
+  delay-seconds: 60
+
+links:
+  map: https://map.side-quest.bar
+  bar: https://side-quest.bar
+  terms: https://side-quest.bar/terms
+  privacy: https://side-quest.bar/privacy
+
+# The server's logs (logs/*.log.gz: players' IP addresses, chat, commands) are deleted after this many days, as the
+# privacy policy says (side-quest.bar/privacy, section 10). 0 keeps them for ever.
+logs:
+  keep-days: 90
+
+# MiniMessage (https://docs.advntr.dev/minimessage/format.html). <map>, <bar>, <terms> and <privacy> are the links
+# above. The policies' addresses are written out as well: Bedrock players can't click links.
+messages:
+  title: "<gradient:#ffd84a:#ffad27><bold>Budapest</bold></gradient>"
+  subtitle: "<gray>a voxel city by <white>SideQuest Bar</white></gray>"
+  welcome:
+    - "<gold><bold>Welcome to Budapest</bold></gold> <gray>— the whole centre at 1 block = 1 m, made by <click:open_url:'<bar>'><hover:show_text:'<bar>'><yellow><u>SideQuest Bar</u></yellow></hover></click>.</gray>"
+    - "<gray>Fly with <white>/fly</white> (double-jump), speed with <white>/flyspeed 1-10</white>. Teleport with <white>/lm</white>: <click:run_command:'/lm'><yellow><u>show the landmarks</u></yellow></click>.</gray>"
+    - "<gray>The same map in your browser: <click:open_url:'<map>'><yellow><u><map></u></yellow></click></gray>"
+    - "<dark_gray>By playing here you accept our <click:open_url:'<terms>'><hover:show_text:'<terms>'><gray><u>Terms of Service</u></gray></hover></click> and <click:open_url:'<privacy>'><hover:show_text:'<privacy>'><gray><u>Privacy Policy</u></gray></hover></click>: <gray>/terms</gray></dark_gray>"
+  tab-header: "<gradient:#ffd84a:#ffad27><bold>BUDAPEST</bold></gradient> <gray>by</gray> <white>SideQuest Bar</white>"
+  tab-footer: "<gray>/lm landmarks · /fly · /map · /bar · /terms</gray>"
+  bar:
+    - "<gold><bold>SideQuest Bar</bold></gold> <gray>— a cosy gaming bar in central Budapest: free video and board games, darts, foosball, craft drinks and game nights. This map was made by the bar.</gray>"
+    - "<gray>You're at its door: Klauzál utca 26-28, District VII.</gray> <click:run_command:'/lm sidequest'><yellow><u>see it from above</u></yellow></click> <gray>·</gray> <click:open_url:'<bar>'><yellow><u><bar></u></yellow></click>"
+  terms:
+    - "<gray>This server is run by <white>SideQuest Bar</white>. By playing here you accept our terms and privacy policy. Be kind in chat: players of all ages are here.</gray>"
+    - "<gray>Terms of Service: <click:open_url:'<terms>'><yellow><u><terms></u></yellow></click></gray>"
+    - "<gray>Privacy Policy: <click:open_url:'<privacy>'><yellow><u><privacy></u></yellow></click></gray>"
+    - "<dark_gray>Not an official Minecraft service. Not approved by or associated with Mojang or Microsoft.</dark_gray>"
+  map: "<gray>The map in your browser: <click:open_url:'<map>'><yellow><u><map></u></yellow></click></gray>"
+  edge: "<gray>That's the edge of the map.</gray>"
+  update: "<gold>Budapest has been updated!</gold> <gray>The server restarts in <white><seconds> s</white> to load the new map; come back in a minute.</gray>"
+  update-kick: "<gold>Budapest has been updated</gold>\n<gray>The new map loads in about a minute. See you there!</gray>"

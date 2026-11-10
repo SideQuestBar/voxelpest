@@ -1,0 +1,55 @@
+{
+ "about": "Hand-curated building detail, keyed by OSM id (way or relation). Prefer fixing OSM itself; put here only what OSM can't express or gets visibly wrong, with a source. Fields: height, min_height, roof_shape, roof_height, wall_colour, roof_colour, material (wall|tenement|classic|glass|solid), drop. `add` lists parts OSM doesn't map at all, as circles (lon, lat, radius m). Landmarks drawn in detail are in scripts/landmarks.py.",
+ "osm": {
+  "6486918": {
+   "name": "Budavári Palota",
+   "roof_colour": "#6e9a88",
+   "wall_colour": "#e6dfcd",
+   "material": "classic",
+   "source": "photos: grey-green patinated roofs, pale limestone walls; aerial photos: hipped copper roofs over every wing, about 22 m to the eaves over the Lions' Court",
+   "height": 33,
+   "roof_shape": "hipped",
+   "roof_height": 7
+  },
+  "12944": {
+   "name": "Anker-ház",
+   "wall_colour": "#c9a865",
+   "material": "classic",
+   "source": "photos from Deák tér (Mapillary 2024): ochre-yellow stone, 1908-10, Ignác Alpár; the cornice about 28 m up (six tall storeys over the shops and a mezzanine), where the levels gave 20 m",
+   "height": 30
+  },
+  "239339482": {
+   "name": "Vörösmarty n°1",
+   "wall_colour": "#a9c8de",
+   "source": "photos from the square (Mapillary 2025): pale sky-blue reflective glass; the glass material's dark default read near black"
+  }
+ },
+ "add": [
+  {
+   "name": "Anker-ház tower 1",
+   "lon": 19.055081,
+   "lat": 47.498083,
+   "radius": 4.6,
+   "height": 36,
+   "roof_shape": "dome",
+   "roof_height": 6,
+   "wall_colour": "#c9a865",
+   "roof_colour": "#5c6166",
+   "material": "classic",
+   "source": "photos from Deák tér (Mapillary 2024): the two domed corner towers over the Deák tér corner, a storey over the cornice under slate domes, over the ochre stone"
+  },
+  {
+   "name": "Anker-ház tower 2",
+   "lon": 19.055109,
+   "lat": 47.497948,
+   "radius": 4.6,
+   "height": 36,
+   "roof_shape": "dome",
+   "roof_height": 6,
+   "wall_colour": "#c9a865",
+   "roof_colour": "#5c6166",
+   "material": "classic",
+   "source": "photos from Deák tér (Mapillary 2024): the two domed corner towers over the Deák tér corner, a storey over the cornice under slate domes, over the ochre stone"
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+# The Minecraft server on its own (Java + Bedrock) in the itzg/minecraft-server image, which downloads Paper and the
+# plugins, writes server.properties from the settings below and runs the server. server/start.sh runs first (the map,
+# the voxelpest plugin, the plugin list), then hands over to the image's /start.
+#
+# scripts/publish_minecraft.sh uploads this file, server/, the map and .env to MC_DIR and runs `docker compose up -d`.
+# ./bv server runs the same file on this machine, with MC_MAP and MC_DATA pointing at build/.
+#
+#   map/    the Minecraft world, landmarks.yml, map.yml, the plugin (read only; copied in by start.sh)
+#   data/   the running server: Paper, the plugins, world, player data, logs
+#   .env    the settings, written by publish_minecraft.sh from your minecraft.env (read below as ${...})
+#
+# Open to the internet: 25565/tcp (Java), 19132/udp (Bedrock). The plugin's player count (GET /status, CORS open)
+# is published only when STATUS_BIND is set, for a web viewer that asks it directly.
+# Console: docker exec -it voxelpest-minecraft rcon-cli   (or docker attach voxelpest-minecraft; detach Ctrl-P Ctrl-Q)
+
+services:
+  minecraft:
+    image: docker.io/itzg/minecraft-server:stable-java25
+    container_name: voxelpest-minecraft
+    entrypoint: ["sh", "/server/start.sh"]
+    environment:
+      EULA: ${EULA:-false}
+      TYPE: PAPER
+      VERSION: ${MC_VERSION:-26.3}
+      MEMORY: ${MEMORY:-4G}
+      USE_AIKAR_FLAGS: "true"
+      JVM_OPTS: ${JAVA_OPTS:-}
+      UID: ${MC_UID:-1000}             # the user the server runs as (./bv server: you)
+      GID: ${MC_GID:-1000}
+      SKIP_DOWNLOAD_DEFAULTS: "true"   # Paper writes its own default configs
+      # server.properties
+      MOTD: ${MOTD:-}                  # empty: start.sh's
+      ONLINE_MODE: ${ONLINE_MODE:-true}
+      MAX_PLAYERS: ${MAX_PLAYERS:-50}
+      ENABLE_WHITELIST: ${WHITELIST:-false}
+      ENFORCE_WHITELIST: ${WHITELIST:-false}
+      VIEW_DISTANCE: ${VIEW_DISTANCE:-10}
+      SIMULATION_DISTANCE: ${SIMULATION_DISTANCE:-4}
+      LEVEL_TYPE: minecraft:flat       # air beyond the map
+      GENERATOR_SETTINGS: '{"layers":[{"block":"minecraft:air","height":1}],"biome":"minecraft:plains"}'
+      GENERATE_STRUCTURES: "false"
+      ALLOW_NETHER: "false"
+      DIFFICULTY: peaceful
+      MODE: adventure
+      SPAWN_PROTECTION: "0"
+      ENABLE_COMMAND_BLOCK: "false"
+      SYNC_CHUNK_WRITES: "false"
+      # start.sh and the voxelpest plugin
+      BEDROCK: ${BEDROCK:-true}
+      VIA: ${VIA:-true}
+      MAP_URL: ${MAP_URL:-}
+      BAR_URL: ${BAR_URL:-}
+      MC_ADDRESS: ${MC_ADDRESS:-}
+    volumes:
+      - ./server:/server:ro
+      - ${MC_MAP:-./map}:/map:ro
+      - ${MC_DATA:-./data}:/data
+    ports:
+      - "25565:25565"
+      - "19132:19132/udp"
+      - "${STATUS_BIND:-127.0.0.1}:${STATUS_PORT:-8765}:8765"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    stop_grace_period: 90s

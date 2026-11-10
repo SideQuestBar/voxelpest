@@ -1,0 +1,51 @@
+name: voxelpest
+version: ${project.version}
+main: bar.sidequest.voxelpest.VoxelpestPlugin
+api-version: "26.3"
+description: The SideQuest Bar's Budapest map — protected, with landmark teleports and flight
+website: https://side-quest.bar
+authors: [SideQuest Bar]
+
+commands:
+  lm:
+    description: Teleport to a landmark, or list them
+    usage: /lm [landmark]
+    aliases: [landmark, landmarks, warp]
+    permission: voxelpest.landmarks
+  fly:
+    description: Turn flying on or off
+    usage: /fly
+    permission: voxelpest.fly
+  flyspeed:
+    description: Set your flying speed (1-10)
+    usage: /flyspeed <1-10>
+    permission: voxelpest.fly
+  spawn:
+    description: Back to the start
+    usage: /spawn
+    permission: voxelpest.landmarks
+  map:
+    description: The map in your browser
+    usage: /map
+  bar:
+    description: Teleports you to SideQuest Bar, who made this map
+    usage: /bar
+  terms:
+    description: The server's Terms of Service and Privacy Policy
+    usage: /terms
+    aliases: [privacy, rules, tos]
+  voxelpest:
+    description: Reload the map's settings and landmarks
+    usage: /voxelpest reload
+    permission: voxelpest.admin
+
+permissions:
+  voxelpest.landmarks:
+    default: true
+  voxelpest.fly:
+    default: true
+  voxelpest.build:
+    description: Change blocks and keep your own game mode (builders only)
+    default: false
+  voxelpest.admin:
+    default: op

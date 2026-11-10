@@ -1,0 +1,51 @@
+{
+  "name": "voxelpest",
+  "productName": "Budapest in voxels",
+  "version": "0.1.0",
+  "description": "Central Budapest in half-metre voxels: fly over it, walk its streets, drive a taxi. Made by SideQuest Bar.",
+  "author": "SideQuest Bar",
+  "homepage": "https://side-quest.bar",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "desktopName": "voxelpest.desktop",
+  "scripts": {
+    "start": "electron .",
+    "test": "bun test",
+    "dist": "electron-builder --linux AppImage --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "bar.sidequest.voxelpest",
+    "executableName": "voxelpest",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "main.mjs",
+      "preload.cjs",
+      "site.mjs",
+      "icons/icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "../web/dist",
+        "to": "web"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "icons/icon.png",
+      "artifactName": "voxelpest-${version}-${arch}.${ext}",
+      "syncDesktopName": true
+    },
+    "publish": null
+  }
+}

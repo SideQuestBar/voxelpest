@@ -1,0 +1,16 @@
+# Response headers on Cloudflare Pages. Everything not listed keeps Pages' default, "public, max-age=0,
+# must-revalidate" with an ETag: index.html and meta.json change with each publish.
+# A Cloudflare zone in front of a custom domain may still raise that max-age (its Browser Cache TTL, 4 hours by
+# default, applies to the extensions it caches: .bin, .png, ...). Set it to "Respect Existing Headers".
+
+# Vite's hashed bundles never change
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The viewer asks for tiles with ?v=<a hash of all the tiles> from meta.json (vite.config.js): a new map, new URLs
+/data/tiles/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# the service worker must never be cached stale
+/sw.js
+  Cache-Control: no-cache

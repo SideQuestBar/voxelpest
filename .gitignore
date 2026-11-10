@@ -1,0 +1,16 @@
+/data/
+.venv/
+__pycache__/
+web/node_modules/
+web/dist/
+/build/
+minecraft/plugin/target/
+minecraft/minecraft.env
+web/deploy/web.env
+minecraft/deploy.env
+.wrangler/
+desktop/out/
+desktop/node_modules/
+web/public/data/
+web/public/voxelpest-data.tar.gz
+desktop/target/

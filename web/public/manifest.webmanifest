@@ -1,0 +1,42 @@
+{
+  "name": "Budapest in voxels",
+  "short_name": "Budapest voxels",
+  "description": "Central Budapest in half-metre voxels: fly over it, walk its streets, drive a taxi. Made by SideQuest Bar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#c9d3dc",
+  "theme_color": "#c9d3dc",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "./",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "lang": "en",
+  "categories": [
+    "entertainment",
+    "travel",
+    "games"
+  ]
+}
