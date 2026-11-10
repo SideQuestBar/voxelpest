@@ -26,6 +26,7 @@ button, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#about:focus { outline: none; }
 .glass { background: var(--paper); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
 #top { position: fixed; left: calc(var(--gx) + var(--sal)); right: calc(var(--gx) + var(--sar)); top: calc(12px + var(--sat));
