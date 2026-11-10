@@ -431,6 +431,7 @@ Full description in `minecraft/README.md`. Working knowledge:
   `meta.json` as `tiles.v`; tiles.ts asks for `...bin?v=<hash>`, `_headers` caches `/data/tiles/*` for a year, and
   `loadMeta` fetches with `cache: 'no-cache'`. `bun run dev` has no `v` (public/ is untouched). Check the live headers
   with `curl -sI` on both `voxelpest.pages.dev` and the custom domain: the zone only touches the latter.
+- **Link previews**: index.html's Open Graph / Twitter tags, canonical link and JSON-LD use `%SITE%`, which vite.config.js's `siteUrl` replaces with `VITE_SITE_URL` (`https://$WEB_DOMAIN` through ./bv site and publish_web.sh; map.side-quest.bar without it). The image is `public/og.jpg`, 1200 × 630, cut from `docs/banner.jpg` (`magick docs/banner.jpg -resize 1200x630^ -gravity center -extent 1200x630 -strip -quality 84`).
 - `window.__three` exposes `lod` (loading/shown/update), `render()`, `setMode`, `goBar`, `map` (MapControls), `tutorial`, `menu`,
   `weather`, `live`, `setHour`, `setDay(day of year)`, `day()`, `season` (the shader's season uniforms), `setWeather(kind, now)`, `setLive`, `car` (`setKind`, `update(dt)`, `chase.yaw/pitch`),
   `vehicles` (the picker) for `tools/shot.mjs` and tests (mock Open-Meteo with `page.route('https://api.open-meteo.com/**')`);

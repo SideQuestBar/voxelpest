@@ -52,7 +52,8 @@ const en = {
     warsaw-vibe-voxel’s phenology (the German Weather Service’s observations, iNaturalist), moved to Budapest’s climate.</p>
     <p>Made by <a href="https://side-quest.bar" target="_blank" rel="noopener">SideQuest Bar</a>. Inspired by
     <a href="https://github.com/stared/warsaw-vibe-voxel" target="_blank" rel="noopener">warsaw-vibe-voxel</a> by Piotr
-    Migdał, whose tile format this map uses.</p>
+    Migdał, whose tile format this map uses. The source is on
+    <a href="https://github.com/SideQuestBar/voxelpest" target="_blank" rel="noopener">GitHub</a>.</p>
     <p class="legal"><a href="https://side-quest.bar/privacy" target="_blank" rel="noopener">Privacy Policy</a> ·
     <a href="https://side-quest.bar/terms" target="_blank" rel="noopener">Terms of Service</a></p>`,
   mcPlay: 'Play in Minecraft', mcSub: 'Java & Bedrock', mcTitle: 'Budapest in Minecraft',
@@ -122,7 +123,8 @@ const hu: Strings = {
     <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. A fák követik az évszakokat: a
     warsaw-vibe-voxel fenológiája (a Német Meteorológiai Szolgálat megfigyelései, iNaturalist), Budapest éghajlatára igazítva.</p>
     <p>A <a href="https://side-quest.bar" target="_blank" rel="noopener">SideQuest Bar</a> készítette. Ihlette: Piotr Migdał <a href="https://github.com/stared/warsaw-vibe-voxel" target="_blank"
-    rel="noopener">warsaw-vibe-voxel</a> projektje, amelynek csempeformátumát ez a térkép is használja.</p>
+    rel="noopener">warsaw-vibe-voxel</a> projektje, amelynek csempeformátumát ez a térkép is használja. A forráskód a
+    <a href="https://github.com/SideQuestBar/voxelpest" target="_blank" rel="noopener">GitHubon</a> érhető el.</p>
     <p class="legal"><a href="https://side-quest.bar/hu/privacy" target="_blank" rel="noopener">Adatvédelmi tájékoztató</a> ·
     <a href="https://side-quest.bar/hu/terms" target="_blank" rel="noopener">Felhasználási feltételek</a></p>`,
   mcPlay: 'Játssz Minecraftban', mcSub: 'Java és Bedrock', mcTitle: 'Budapest Minecraftban',

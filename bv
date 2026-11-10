@@ -252,7 +252,7 @@ case "$cmd" in
     web) unpack; web_deps; load_env; cd web && VITE_MINECRAFT="${MINECRAFT:-}" VITE_UMAMI_URL="${UMAMI_DEV:+${UMAMI_URL:-}}" VITE_UMAMI_ID="${UMAMI_DEV:+${UMAMI_ID:-}}" exec bun run dev "$@" ;;
     site) unpack; web_deps; load_env
           cd web && VITE_MINECRAFT="${MINECRAFT:-}" VITE_MC_ADDRESS="${MC_ADDRESS:-}" VITE_MC_STATUS="${MC_STATUS_URL:-}" \
-              VITE_BAR_URL="${BAR_URL:-}" VITE_UMAMI_URL="${UMAMI_URL:-}" VITE_UMAMI_ID="${UMAMI_ID:-}" exec bun run build ;;
+              VITE_BAR_URL="${BAR_URL:-}" VITE_SITE_URL="${WEB_DOMAIN:+https://$WEB_DOMAIN}" VITE_UMAMI_URL="${UMAMI_URL:-}" VITE_UMAMI_ID="${UMAMI_ID:-}" exec bun run build ;;
     check) web_deps; cd web && exec bun run check ;;
     publish-web) unpack; exec bash scripts/publish_web.sh "$@" ;;
     desktop) desktop "$@" ;;

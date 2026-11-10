@@ -52,6 +52,7 @@ jobs:
       - name: Build
         env:
           BAR_URL: ${{ vars.BAR_URL }}
+          WEB_DOMAIN: ${{ vars.WEB_DOMAIN }}
           MINECRAFT: ${{ vars.MINECRAFT }}
           MC_ADDRESS: ${{ vars.MC_ADDRESS }}
           MC_STATUS_URL: ${{ vars.MC_STATUS_URL }}

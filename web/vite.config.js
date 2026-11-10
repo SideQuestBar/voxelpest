@@ -42,12 +42,19 @@ function versionTiles() {
   };
 }
 
+// index.html's %SITE%: the address the site is published at, for the canonical link and the preview image (Open
+// Graph wants absolute URLs). VITE_SITE_URL comes from WEB_DOMAIN (./bv site, publish_web.sh).
+const site = (process.env.VITE_SITE_URL || 'https://map.side-quest.bar').replace(/\/+$/, '');
+function siteUrl() {
+  return { name: 'site-url', transformIndexHtml: (html) => html.replaceAll('%SITE%', site) };
+}
+
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version) },  // the about box shows it
   base: './',
-  plugins: [dropMapParts(), versionTiles()],
+  plugins: [dropMapParts(), versionTiles(), siteUrl()],
   worker: { format: 'es' },
   build: { chunkSizeWarningLimit: 2000, target: 'es2022' },
   // bun run dev with the Minecraft card on (?minecraft=1) and ./bv server running here: its player count

@@ -32,7 +32,7 @@ if [ "$BUILD" = 1 ]; then
     step "web viewer (Minecraft card: ${MINECRAFT:-false})"
     (cd web && bun install --frozen-lockfile --silent \
         && VITE_MINECRAFT="${MINECRAFT:-false}" VITE_MC_ADDRESS="${MC_ADDRESS:-}" VITE_MC_STATUS="${MC_STATUS_URL:-}" \
-           VITE_BAR_URL="${BAR_URL:-}" VITE_UMAMI_URL="${UMAMI_URL:-}" VITE_UMAMI_ID="${UMAMI_ID:-}" bun run build)
+           VITE_BAR_URL="${BAR_URL:-}" VITE_SITE_URL="${WEB_DOMAIN:+https://$WEB_DOMAIN}" VITE_UMAMI_URL="${UMAMI_URL:-}" VITE_UMAMI_ID="${UMAMI_ID:-}" bun run build)
 fi
 [ -f web/dist/index.html ] || { echo "no web/dist yet: run without --no-build"; exit 1; }
 
