@@ -33,12 +33,18 @@ export const mime = (file) => TYPES[path.extname(file).slice(1).toLowerCase()] ?
 
 /** The app's arguments: `key=value` pairs that become the page's query string (`view=parliament hour=20 lang=hu`);
  * Chromium's and Electron's own switches (`--...`) are not the page's. Two are the app's business too, for a kiosk:
- * `fullscreen=always` (never leaves full screen) and `nolink=true` (no link opens anything outside the app). */
+ * `fullscreen=always` (never leaves full screen) and `nolink=true` (no link opens anything outside the app). And
+ * `update=false` keeps the app at its version (main.mjs otherwise updates it from the project's releases). */
 export function parseArgs(argv) {
   const query = argv.filter((a) => a.includes('=') && !a.startsWith('-'));
   // the first one counts, as with URLSearchParams.get
   const value = (key) => query.find((a) => a.slice(0, a.indexOf('=')) === key)?.slice(key.length + 1);
-  return { query, fullscreenAlways: value('fullscreen') === 'always', nolink: ['true', '1'].includes(value('nolink')) };
+  return {
+    query,
+    fullscreenAlways: value('fullscreen') === 'always',
+    nolink: ['true', '1'].includes(value('nolink')),
+    update: !['false', '0'].includes(value('update')),
+  };
 }
 
 export const sameOrigin = (a, b) => a.protocol === b.protocol && a.hostname === b.hostname && a.port === b.port;

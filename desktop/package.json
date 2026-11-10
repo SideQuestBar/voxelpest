@@ -46,6 +46,13 @@
       "artifactName": "voxelpest-${version}-${arch}.${ext}",
       "syncDesktopName": true
     },
-    "publish": null
+    "publish": {
+      "provider": "github",
+      "owner": "SideQuestBar",
+      "repo": "voxelpest"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
   }
 }

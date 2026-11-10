@@ -475,6 +475,16 @@ tested). Electron's binary comes on first use (`electron --version` fetches it).
   `linkEnv`'s environment: the AppImage's (`APPDIR` and every variable pointing into the mount, `OWD` as the
   directory) and Chromium's own (`CHROME_DESKTOP`, `NO_AT_BRIDGE`, `FC_FONTATIONS`, `EGL_PLATFORM`,
   `ORIGINAL_XDG_CURRENT_DESKTOP`) undone.
+- **Updates** (`update()` in main.mjs, electron-updater; `build.publish` is this GitHub repo): the packaged AppImage
+  (`APPIMAGE` set) checks the latest release's `latest-linux.yml` on start, downloads in the background and swaps its
+  file on quit; silent, failures to stderr, `update=false` (parseArgs) turns it off. `.github/workflows/desktop.yml`
+  runs `./bv desktop` on a `v*` tag (which must equal both package.json versions) and makes the release with `gh`
+  (the AppImage + `latest-linux.yml`; electron-builder itself stays `--publish never`); `workflow_dispatch` builds an
+  artifact only. The map's LFS objects are cached by the pointer files' hash; the site's settings are Actions
+  variables. To test without GitHub: two builds with `--config` copies of `build` whose `publish` is
+  `{provider: generic, url: http://127.0.0.1:PORT}` (a `-c.publish.provider` override fails validation), the newer
+  with `-c.extraMetadata.version`, its AppImage and yml served from a directory, the older run with
+  `--ozone-platform=headless` until stderr says "installs on quit", then SIGTERM: the file is replaced.
 - **WebGPU**: `--enable-unsafe-webgpu` only. Not `--enable-features=Vulkan` as often quoted: that is Vulkan for
   compositing, which native Wayland refuses ("'--ozone-platform=wayland' is not compatible with Vulkan") and the GPU
   process crashed in a loop. On the hybrid laptop: `requestAdapter` gives the Intel Iris Xe (gen-12lp) for

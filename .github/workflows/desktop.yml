@@ -1,0 +1,84 @@
+# The desktop app (desktop/, an AppImage) built as ./bv desktop builds it. A version tag (v1.2.3, the version in
+# desktop/package.json and web/package.json) makes a GitHub release of it with latest-linux.yml beside it: the feed the
+# installed apps update themselves from (desktop/main.mjs, electron-updater). Run by hand, it only builds, and the
+# AppImage is the run's artifact.
+#
+# The site's settings (web.env's, for ./bv site) come from the repository's Actions variables, all optional: BAR_URL,
+# MINECRAFT, MC_ADDRESS, MC_STATUS_URL, UMAMI_URL, UMAMI_ID.
+name: desktop
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write  # the release
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # the map's parts are in Git LFS (~125 MB): kept between runs, so that a build doesn't spend LFS bandwidth
+      # unless the map changed (the pointer files' hash)
+      - uses: actions/cache@v6
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('web/public/voxelpest-data.tar.gz.part-*') }}
+      - run: git lfs pull
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+
+      - name: The tag is the version
+        if: github.ref_type == 'tag'
+        run: |
+          for p in desktop web; do
+            v=$(bun -p "require('./$p/package.json').version")
+            [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "::error::$p/package.json is $v, the tag is $GITHUB_REF_NAME"; exit 1; }
+          done
+
+      - name: Build
+        env:
+          BAR_URL: ${{ vars.BAR_URL }}
+          MINECRAFT: ${{ vars.MINECRAFT }}
+          MC_ADDRESS: ${{ vars.MC_ADDRESS }}
+          MC_STATUS_URL: ${{ vars.MC_STATUS_URL }}
+          UMAMI_URL: ${{ vars.UMAMI_URL }}
+          UMAMI_ID: ${{ vars.UMAMI_ID }}
+        run: ./bv desktop
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: voxelpest-appimage
+          path: |
+            desktop/out/*.AppImage
+            desktop/out/latest-linux.yml
+          compression-level: 0
+          if-no-files-found: error
+
+      # the AppImage and the feed that names it; a tag with a hyphen (v1.2.3-beta.1) is a pre-release, which the
+      # installed apps pass over. Run again for the same tag, it replaces the files.
+      - name: Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files="desktop/out/*.AppImage desktop/out/latest-linux.yml"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" $files --clobber
+          else
+            pre=; case "$GITHUB_REF_NAME" in *-*) pre=--prerelease ;; esac
+            gh release create "$GITHUB_REF_NAME" $files --verify-tag --generate-notes $pre
+          fi

@@ -36,7 +36,7 @@ Analytics are off by default. With `UMAMI_URL` (your [Umami](https://umami.is) s
 
 The web viewer in an [Electron](https://www.electronjs.org) window, for WebGPU
 (Chromium has it on Linux, on Vulkan; the system webviews don't), as a Linux AppImage that carries the map (about
-210 MB, the map and Chromium). `./bv desktop` builds the site as `./bv site` does, with the same settings, and writes
+240 MB, the map and Chromium). `./bv desktop` builds the site as `./bv site` does, with the same settings, and writes
 `build/voxelpest-<version>-x86_64.AppImage`; nothing is uploaded. The app starts
 full screen. Esc, or a controller's Menu button, opens a menu to leave full screen (F11 too), go to SideQuest Bar or
 quit. Its bottom bar names the map's data sources where the website shows the help line; the help (the ? button)
@@ -46,3 +46,21 @@ open in the desktop's browser. For a kiosk, `fullscreen=always` takes leaving fu
 app refuses it), and `nolink=true` turns every link out of the app into plain text (and the app opens none).
 `./bv desktop dev` runs it on the viewer's dev server, in a window, with devtools on F12. It runs on Wayland as it
 is; if it ever stays on the loading screen, `--ozone-platform=x11` runs it through XWayland.
+
+**Releases and updates.** `.github/workflows/desktop.yml` builds the AppImage on GitHub Actions the same way. Pushing
+a version tag makes a GitHub release of it:
+
+```
+# bump "version" in desktop/package.json and web/package.json (the workflow checks both against the tag), commit
+git tag v1.0.3 && git push origin master v1.0.3
+```
+
+The release carries the AppImage and `latest-linux.yml`, the feed the installed apps read: on start the app asks
+GitHub for the latest release, downloads a newer AppImage in the background (only the blocks that changed) and
+replaces its own file when it quits, so the next start is the new version. The file takes the new version's name
+when the old one had the version in it; an AppImage renamed to, say, `voxelpest.AppImage` keeps its name. Nothing is
+asked or shown, and `update=false` keeps a copy (a kiosk's) at its version. This needs the repository's releases to
+be public, and only the AppImage run as a file updates itself. A tag with a hyphen (`v1.1.0-beta.1`) makes a
+pre-release, which the installed apps pass over. Run by hand (Actions, desktop, Run workflow), the workflow only
+builds; the AppImage is the run's artifact. The site's settings come from the repository's Actions variables, all
+optional: `BAR_URL`, `MINECRAFT`, `MC_ADDRESS`, `MC_STATUS_URL`, `UMAMI_URL`, `UMAMI_ID`.

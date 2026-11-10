@@ -26,10 +26,11 @@ test('reads the arguments', () => {
   const a = parseArgs(['view=parliament', '--remote-debugging-port=9222', '--verbose', 'fullscreen=always', 'nolink=true']);
   assert.deepEqual(a.query, ['view=parliament', 'fullscreen=always', 'nolink=true']);
   assert.ok(a.fullscreenAlways && a.nolink);
-  assert.deepEqual(parseArgs([]), { query: [], fullscreenAlways: false, nolink: false });
+  assert.deepEqual(parseArgs([]), { query: [], fullscreenAlways: false, nolink: false, update: true });
   const b = parseArgs(['fullscreen=yes', 'nolink=false', 'nolink=true']);
   assert.ok(!b.fullscreenAlways && !b.nolink);
   assert.ok(parseArgs(['nolink=1']).nolink);
+  assert.ok(!parseArgs(['update=false']).update && !parseArgs(['update=0']).update && parseArgs(['update=true']).update);
 });
 
 test('compares origins, custom scheme included', () => {
