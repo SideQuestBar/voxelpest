@@ -19,6 +19,50 @@ Every landmark is a list of solids evaluated voxel by voxel:
 Each solid fills, carves, paints only voxels of given colours (windows on a wall), or fills only empty voxels
 (pilasters that must not cut into a neighbour). Chains, cables, hangers and truss members are lines of voxels.
 
+## At a glance
+
+| Landmark | What's drawn |
+| --- | --- |
+| Parliament | 16-sided drum with buttresses and pinnacles, ribbed red dome, lantern and spire; the two stone needle towers on the river front; Gothic turrets; copper and tile roofs as aerial photos show them; buttress strips, pinnacles, windows storey by storey and gables on every wing; the riverside arcade; the main entrance's steps, arches and lions |
+| Kossuth tér | the national flag on its 33 m mast, the dark granite square, the Rákóczi and Andrássy horsemen, the Tisza and Kossuth memorials, Attila József on the embankment steps |
+| Chain Bridge | triumphal-arch pylons on cutwater piers, two chains a side with bulbs, hangers, lattice girders, the four lions |
+| Liberty Bridge | the green cantilever trusses, portals, four masts with the Turul birds, tram tracks |
+| Elisabeth Bridge | white pylons, main cables, hangers and back-stays; the deck on the road's axis with its six lanes marked |
+| Fisherman's Bastion | arcaded, crenellated terrace walls and seven conical towers |
+| Matthias Church | the 78 m Gothic tower in its storeys of blind arches and the Béla tower with its tiled helm, Zsolnay-tiled roofs in zigzags and diamonds over the cross gables, the south stair turret, the apse and its buttresses, pointed windows, the portals |
+| Hilton Budapest | the white Baroque front of the Jesuit college on Hess András tér (fifteen bays, pilasters, pedimented windows, the steep tiled roof, the canopy), the St Nicholas tower with its octagon and spire, the 1970s wings with bronze glass strips behind the Fisherman's Bastion, the Dominican church's ruins in the court |
+| St Stephen's Basilica | the colonnaded drum, ribbed copper dome, lantern; the bell towers' belfries and cupolas; the west front's steps, paired Corinthian columns, arched entrance with its gold mosaic, inscription and pediment |
+| Buda Castle | the National Gallery's dome on its drum of paired columns; the palace at its real height with copper hipped roofs and rows of windows; the Lions' Court level with the Hunyadi court |
+| Liberty Statue | the pedestal, the 14 m figure with the palm leaf facing down the new east cut, the side figures on their plinths, the white cross of 2025, the level terrace |
+| Citadella | the fortress as renewed in 2020-26: battered walls with their walk, the Rondella with its court and glass foyer, the white concrete mouths and the east cut, the park on top, and the 12 × 6 m national flag on its 36 m mast |
+| Heroes' Square | the colonnades with statues and chariots, Gabriel's column, the seven chieftains |
+| Great Market Hall | brick walls in bands, the tiled roof with its glazed ridge, the front gable and towers |
+| Rákóczi tér market hall | the crossing naves with aisles and corner pavilions, yellow brick with red bands, the main gable's great arched window in blue iron, the clock, the cornice and the city's arms, the wings' balustrades and obelisks |
+| Dohány Street Synagogue | the striped brick towers and their gilded onion domes |
+| Margaret Bridge | the two halves meeting at 150° on the island pier, six ochre segmental arches with lattice spandrels, limestone piers with prows and winged figures above the deck, the obelisks and crown on the island pier, the branch to the island along its road, lane markings, the Pest ramp running on as the street to Jászai Mari tér |
+| Petőfi Bridge | four grey lattice girders, deepest over the piers, 112 + 154 + 112 m; the tram down the middle |
+| Puskás Aréna | the leaning steel-mesh facade between 30 white lattice pylons, the roof with its white edge and translucent inner band, three tiers of red seats with glazed boxes, the striped pitch |
+| Hungarian State Opera | the carriage porch, the five-arch loggia between paired columns, the balustrade of composers, corner pavilions with Muses in niches and square slate domes, Liszt and Erkel, the mansard with its iron crest; behind it one long pale zinc roof over the auditorium and the stage with two lanterns, low roofs with rows of skylights either side (as aerial photos show), the carriage drives |
+| Erkel Theatre | the curved travertine front: seven glass bays between stone piers with banners, the white canopy, the ERKEL letters and the window strips under the parapet; the auditorium's vault, the stage house and the wings |
+| Keleti Station | the barrel-vaulted shed, the great arched window on Baross tér with its clock and statues, the corner pavilions with Watt and Stephenson |
+| Nyugati Station | the shed's glazed gable in its blue-grey iron grid between two domed towers, the slate roof with its glazed ridge |
+| WestEnd City Center | the tilted glass canopy on its steel tree over the entrance on Nyugati tér, the glazed front between granite piers and the glass wedge, the hotel and offices along Váci út, the cinema hall, the roof garden with its pond, the Millennium garden's deck and the car park with its solar panels |
+| Széchenyi Baths | the stone 1913 front with three ribbed domes, the yellow wings round the court, the three outdoor pools |
+| Museum of Ethnography | two wings dipping to the path between them and rising outwards like ramps, the roof garden, the pixel grille of folk motifs |
+| Zoo | the Great Rock, the Elephant House's Zsolnay dome and minaret, the main gate with its elephants |
+| Bálna | the glass and steel whale between two brick warehouses |
+| Ferencváros church | the 66.7 m tower with clocks, belfry and copper spire, between two stair turrets, before a brick basilica |
+| Budapest Eye | the 65 m wheel with 42 gondolas, its legs and lights |
+| Soviet War Memorial | the obelisk with its star and arms, the bronze reliefs |
+| Gellért Hotel and Baths | the Art Nouveau front at the foot of the hill, its middle tower with the name, a steep red roof and a copper lantern, the two corner pavilions' green domes, the baths' rotunda under a dark ribbed dome, the swimming hall's glass vault; up the hill the open-air baths: the sun terrace's white arcade bent round the half-moon garden, the wave pool's terracotta deck and stepped end, the warm adventure pool, the children's pool |
+| BME Building K | the ladder of brick ranges round light courts under steep slate roofs, the stone entrance pavilion with three arched doors, six giant columns, a balustrade, a crested roof and two spired turrets, the pyramid-roofed end pavilions, the aula's glass roof |
+| Hungarian National Museum | the Classicist block round two courts, the portico of eight Corinthian columns on its stair with the figures in the pediment, pedimented windows, giant corner pilasters, the low dome over the Dome Hall |
+| Kálvin tér skybridge | the glazed gallery on a flat arch across Kecskeméti utca, with planters on its roof |
+| Corvin Palace | the old Corvin department store on Blaha Lujza tér with its stone front back: the arcade of round arches, giant fluted pilasters, the frieze, the cornice and the roof balustrade |
+| Europeum | the cream stone shopping centre and hotel across the square: the glazed retail base, the grid of windows, the open stone frame at the corner, the red letters on the roof |
+| Danube boats | every ship moored along the quays from its outline: pointed bows upstream, white decks with window bands and sun decks, awnings on the restaurant boats; the A38 (a Ukrainian stone carrier with its wheelhouse aft and a glass pavilion on deck) and its exhibition barge; the Kossuth paddle steamer with its paddle boxes and yellow funnel |
+| SideQuest Bar | the bar that made the map, inside and out: the shopfront on Klauzál utca, the room, the bar, the steel stair, the mezzanine with the foosball table, the darts corner, the corridor and the toilets, all walkable |
+
 ## Parliament (Országház)
 
 **Dimensions**: 268 × 123 m, 96 m to the top of the spire ([Wikipedia][parl-wiki]).
