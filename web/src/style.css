@@ -39,7 +39,15 @@ button { cursor: pointer; }
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow); }
 .seg button { display: flex; align-items: center; gap: 6px; border: 0; background: none; padding: 5px 11px; border-radius: 7px; font-weight: 500; }
 .seg button svg { width: 15px; height: 15px; }
-.seg button:hover { background: rgba(255,255,255,.7); }
+.seg button.going { background: rgba(26, 32, 36, .45); color: #fff; }  /* tapped, the mode still loading */
+@media (hover: hover) { .seg button:hover { background: rgba(255,255,255,.7); } }
+/* touch: the small buttons at the top take taps from a finger's width round them, and no drag starts a page scroll
+   on a control (main.ts leaves their touchmove alone: cancelling it could cost iOS the tap) */
+@media (pointer: coarse) {
+  #switches .seg button, #switches #fs-btn { position: relative; }
+  #switches .seg button::after, #switches #fs-btn::after { content: ""; position: absolute; inset: -10px -1px; }
+}
+#top button, #bar button, #places-toggle, #locate, #promo a, #promo button { touch-action: none; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 #lang button { padding: 5px 9px; font-size: 12px; letter-spacing: .03em; }
 

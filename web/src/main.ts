@@ -50,9 +50,10 @@ if (qs.get('promo') === '0') document.body.classList.add('nopromo');
 // iOS Safari ignores user-scalable=no: a pinch anywhere would zoom the page rather than the map
 for (const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
 // no pull-to-refresh: a drag that starts on the title, the cards or the bar must not scroll (or reload) the page; the
-// lists and dialogs that do scroll keep theirs
+// lists and dialogs that do scroll keep theirs. Buttons and links are left alone (style.css: touch-action none, so
+// nothing scrolls from them either): a finger wobbles as it taps, and a cancelled touchmove can cost iOS the click
 document.addEventListener('touchmove', (e) => {
-  if (!(e.target as Element | null)?.closest?.('#places-list, dialog, .am-list, #mc-panel')) e.preventDefault();
+  if (!(e.target as Element | null)?.closest?.('#places-list, dialog, .am-list, #mc-panel, button, a')) e.preventDefault();
 }, { passive: false });
 
 const loader = window.bvLoader;

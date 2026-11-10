@@ -40,7 +40,11 @@ export class Ui {
 
   constructor(meta: Meta, private readonly on: UiHandlers) {
     this.views = Object.entries(meta.views).filter(([k]) => k !== 'sidequest');
-    for (const b of document.querySelectorAll<HTMLButtonElement>('#modes button')) b.onclick = () => on.mode(b.dataset.mode as Mode);
+    for (const b of document.querySelectorAll<HTMLButtonElement>('#modes button')) b.onclick = () => {
+      // pressed at once: walking and driving start once the streets round the spot have loaded
+      if (b.getAttribute('aria-pressed') !== 'true') b.classList.add('going');
+      on.mode(b.dataset.mode as Mode);
+    };
     for (const b of document.querySelectorAll<HTMLButtonElement>('#lang button')) b.onclick = () => setLang(b.dataset.lang as Lang);
     this.time = new TimeCard({ hour: on.hour, date: on.date, weather: on.weather, live: on.live, opened: () => this.closePlaces() });
     this.names.onclick = () => {
@@ -127,7 +131,10 @@ export class Ui {
   setMode(m: Mode) {
     this.mode = m;
     document.body.dataset.mode = m;
-    for (const b of document.querySelectorAll<HTMLButtonElement>('#modes button')) b.setAttribute('aria-pressed', String(b.dataset.mode === m));
+    for (const b of document.querySelectorAll<HTMLButtonElement>('#modes button')) {
+      b.setAttribute('aria-pressed', String(b.dataset.mode === m));
+      b.classList.remove('going');
+    }
     const touch = isTouch();
     $('#touch').hidden = !touch || m === 'map';
     $('#touch').dataset.mode = m;

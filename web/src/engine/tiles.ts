@@ -135,7 +135,7 @@ export class Tiles {
     if (over > 1) this.tight = Math.min(this.tight * (over > 1.25 ? 1.25 : 1.08), 6);
     else if (over < 0.85 && this.loading === 0) this.tight = Math.max(this.tight / 1.04, 1);
     const err = this.err * this.tight;
-    const focusAt = new THREE.Vector3(f.x, cam.y, f.z);
+    const focusAt = new THREE.Vector3(f.x, 0, f.z);  // on the ground: from high over the map the camera's height put every tile out of reach
     const visit = (s: number, tx: number, ty: number): Tile[] | null => {
       const t = this.get(s, tx, ty), b = this.bounds(s, tx, ty);
       const dist = Math.max(b.distanceToPoint(cam), 1), seen = this.frustum.intersectsBox(b);
@@ -163,7 +163,8 @@ export class Tiles {
       if (t.mesh) this.show(t, show.has(t), now);
       // forget what nobody asked for in 10 s (never the coarsest level)
       if (t.state === 'ready' && t.s !== top && !show.has(t) && !this.fading.has(t) && (now - t.wanted > this.keepMs || (over > 1 && t.wanted !== now))) this.free(t);
-      else if (t.state === 'queued' && now - t.wanted > 1500) t.state = 'new';
+      // (not one somebody waits for: a frame longer than that, on a slow phone, and walking or driving never started)
+      else if (t.state === 'queued' && !t.waiters.length && now - t.wanted > 1500) t.state = 'new';
     }
     this.shown = show.size;
     this.loading = loading;
