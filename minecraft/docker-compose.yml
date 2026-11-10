@@ -3,7 +3,8 @@
 # the voxelpest plugin, the plugin list), then hands over to the image's /start.
 #
 # scripts/publish_minecraft.sh uploads this file, server/, the map and .env to MC_DIR and runs `docker compose up -d`.
-# ./bv server runs the same file on this machine, with MC_MAP and MC_DATA pointing at build/.
+# ./bv server runs the same file on this machine, with MC_MAP and MC_DATA pointing at build/. MC_SERVER, MC_MAP and
+# MC_DATA can be absolute paths when something else than the publish script runs this file (minecraft/README.md).
 #
 #   map/    the Minecraft world, landmarks.yml, map.yml, the plugin (read only; copied in by start.sh)
 #   data/   the running server: Paper, the plugins, world, player data, logs
@@ -52,7 +53,7 @@ services:
       BAR_URL: ${BAR_URL:-}
       MC_ADDRESS: ${MC_ADDRESS:-}
     volumes:
-      - ./server:/server:ro
+      - ${MC_SERVER:-./server}:/server:ro
       - ${MC_MAP:-./map}:/map:ro
       - ${MC_DATA:-./data}:/data
     ports:

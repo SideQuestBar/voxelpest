@@ -35,8 +35,8 @@ data/               the running server: world, player data, other plugins' setti
 
 1. **DNS**: an A record for `mc.side-quest.bar` pointing to the server's public IP. Bedrock doesn't read SRV records,
    so the plain A record is what both editions use.
-2. **Firewall**: open **25565/tcp** (Java) and **19132/udp** (Bedrock) to the internet, in OVH's network firewall and
-   in the machine's own (`ufw allow 25565/tcp`, `ufw allow 19132/udp`). The plugin's status port (8765) is bound to
+2. **Firewall**: open **25565/tcp** (Java) and **19132/udp** (Bedrock) to the internet, in your provider's network firewall (if it
+   has one) and in the machine's own (`ufw allow 25565/tcp`, `ufw allow 19132/udp`). The plugin's status port (8765) is bound to
    127.0.0.1 unless `STATUS_BIND` says otherwise.
 3. **Settings**: `cp minecraft/minecraft.env.example ~/.config/voxelpest/minecraft.env`, then set `MC_HOST` (your
    ssh target, a Tailscale name works), `EULA=true` (you agree to the [Minecraft EULA](https://aka.ms/MinecraftEULA))
@@ -46,6 +46,23 @@ data/               the running server: world, player data, other plugins' setti
 5. Console: `docker exec -it voxelpest-minecraft rcon-cli`, or `docker attach voxelpest-minecraft` (leave with Ctrl-P
    Ctrl-Q; typing `stop` restarts the server). `op <name>`
    for the admin command `/voxelpest`.
+
+### Under a deployment tool
+
+Anything that runs a compose file from a git repository can run the server instead of `docker compose up` by hand:
+point it at `minecraft/docker-compose.yml` and give it the settings of `minecraft.env.example` as environment
+variables (`EULA=true` at least). The three folders the container mounts are settings too, so they can be absolute
+paths on the host, outside the tool's checkout:
+
+```
+MC_SERVER=/srv/voxelpest-minecraft/server   # start.sh, geyser-config.yml (default ./server)
+MC_MAP=/srv/voxelpest-minecraft/map         # the uploaded map (default ./map)
+MC_DATA=/srv/voxelpest-minecraft/data       # the running server (default ./data)
+```
+
+With `RUN_COMPOSE=false` in your minecraft.env, `./bv publish-minecraft` only uploads (the map, the plugin, `server/`)
+and leaves starting the container to the tool. A new map still restarts the server by itself. Both ports are published
+by the container directly (25565/tcp, 19132/udp): they need no HTTP proxy and no domain in the tool.
 
 ## Updating the map
 
