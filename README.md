@@ -456,7 +456,7 @@ Neither depends on the other: they can run on different machines, and either can
 full screen. Esc, or a controller's Menu button, opens a menu to leave full screen (F11 too), go to SideQuest Bar or
 quit. Its bottom bar names the map's data sources where the website shows the help line; the help (the ? button)
 covers the map, walking and driving for the mouse and keys, a touch screen or a controller. The viewer's URL
-parameters can be given as arguments: `./voxelpest-0.1.0-x86_64.AppImage view=parliament hour=20 lang=hu`. Links
+parameters can be given as arguments: `./voxelpest-1.0.0-x86_64.AppImage view=parliament hour=20 lang=hu`. Links
 open in the desktop's browser. For a kiosk, `fullscreen=always` takes leaving full screen out of the menu (and the
 app refuses it), and `nolink=true` turns every link out of the app into plain text (and the app opens none).
 `./bv desktop dev` runs it on the viewer's dev server, in a window, with devtools on F12. It runs on Wayland as it

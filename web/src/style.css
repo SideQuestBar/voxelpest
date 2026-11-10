@@ -224,6 +224,7 @@ body[data-mode="walk"] #promo, body[data-mode="drive"] #promo { opacity: .85; }
 #about::backdrop, #tutorial::backdrop, #app-menu::backdrop { background: rgba(10, 14, 18, .35); }
 #about h2 { margin: 0 0 8px; font-size: 19px; }
 #about h2 em { font-style: normal; font-weight: 400; }
+#version { margin-left: 6px; font-size: 12px; font-weight: 500; opacity: .6; }
 #about a { color: var(--accent); }
 /* ?nolink=true: what were links are plain text (ui/desktop.ts) */
 body.nolink #about a:not([href]) { color: inherit; }

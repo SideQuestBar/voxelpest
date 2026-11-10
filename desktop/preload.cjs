@@ -5,4 +5,5 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('voxelpestDesktop', {
   quit: () => ipcRenderer.invoke('quit'),
   fullscreen: (on) => ipcRenderer.invoke('fullscreen', on),
+  version: () => ipcRenderer.invoke('version'),
 });

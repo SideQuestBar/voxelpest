@@ -65,6 +65,7 @@ const isApp = (url) => {
 };
 
 // what the viewer asks through the preload's window.voxelpestDesktop (web/src/ui/desktop.ts); only the app's pages
+ipcMain.handle('version', (e) => (isApp(e.senderFrame?.url) ? app.getVersion() : ''));
 ipcMain.handle('quit', (e) => { if (isApp(e.senderFrame?.url)) app.quit(); });
 ipcMain.handle('fullscreen', (e, on) => {
   const win = BrowserWindow.fromWebContents(e.sender);

@@ -6,7 +6,12 @@ export interface DesktopHost {
   quit(): Promise<void>;
   // goes full screen or back to a window when `on` is given; answers whether the window is full screen
   fullscreen(on?: boolean): Promise<boolean>;
+  version?(): Promise<string>;  // the app's, from desktop/package.json
 }
+
+declare const __APP_VERSION__: string;
+// the version for the about box: the app's own in the desktop app, else the website's (web/package.json)
+export const appVersion = async () => (await window.voxelpestDesktop?.version?.().catch(() => null)) || __APP_VERSION__;
 
 declare global {
   interface Window { voxelpestDesktop?: DesktopHost }
