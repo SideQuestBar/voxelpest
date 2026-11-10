@@ -202,8 +202,8 @@ server() {
     [ -f build/minecraft/map.yml ] || minecraft_world
     eula
     mkdir -p build/minecraft/plugins build/mc-data
-    cp minecraft/voxelpest.jar build/minecraft/plugins/
-    [ -f build/minecraft/plugins/config.yml ] || cp minecraft/plugin/src/main/resources/config.yml build/minecraft/plugins/
+    # the plugin and its settings as they are in the project now (a kept copy once showed an old welcome message)
+    cp minecraft/voxelpest.jar minecraft/plugin/src/main/resources/config.yml build/minecraft/plugins/
     # the server's files in build/mc-data stay yours: rootless podman maps the container's root to you
     local uid gid
     if docker --version 2>/dev/null | grep -qi podman; then uid=0 gid=0; else uid=$(id -u) gid=$(id -g); fi
