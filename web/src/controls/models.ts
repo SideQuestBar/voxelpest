@@ -373,7 +373,7 @@ function trabant() {
   return new Model('trabant', k.build(), wheelGeo(s.r, 0.145, 0.19, 0xb7bbbd, { holes: 4, cap: 0.085, dark: 0x5b6064 }), fourWheels('trabant'));
 }
 
-// ------------------------------------------------------------------ MOL Bubi: the lime 2021 bike, and its rider
+// ------------------------------------------------------------------ the lime city bike (no operator's name on it), and its rider
 function bubi() {
   const k = new Kit(), M = mats(), LIME = 0x96d21c, CH = 0xc4c9cd, BB: P2 = [-0.1, 0.28];
   const T = (a: P3, b: P3, r = 0.022, c = LIME, m: THREE.Material = M.paint) => k.tube(a, b, r, m, c);
@@ -397,7 +397,7 @@ function bubi() {
     T([0.3, 1.07, s * 0.14], [0.2, 1.08, s * 0.29], 0.012, 0x2a2d30, M.matte);
     T([0.21, 1.08, s * 0.27], [0.17, 1.085, s * 0.33], 0.02, 0x161616, M.matte);
   });
-  // the front carrier, a lime tube frame on the head tube, and its MOL Bubi plate
+  // the front carrier, a lime tube frame on the head tube, and its plate
   k.mirror((s) => {
     T([0.42, 0.8, s * 0.04], [0.5, 0.86, s * 0.16], 0.014);
     T([0.48, 0.86, s * 0.17], [0.79, 0.86, s * 0.17], 0.014);
@@ -421,19 +421,10 @@ function bubi() {
   };
   guard(0.56, 0.35, 2.1);
   guard(-0.56, 1.6, 2.9);
-  // the logos: the plate in front, both sides of the rear unit (a honeycomb on the lime)
+  // the plate in front and both sides of the rear unit (a honeycomb on the lime), unbranded
   const at = new Atlas(512, 256), dec = decalMat(at);
-  const logo = (g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
-    g.fillStyle = '#e3231b';
-    g.beginPath(); g.roundRect(x, y, w, h, h * 0.22); g.fill();
-    g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.textAlign = 'left';
-    fitText(g, 'MOL', x + w * 0.07, y + h * 0.53, w * 0.26, h * 0.42, 800, FONT);
-    g.beginPath(); g.arc(x + w * 0.44, y + h / 2, h * 0.26, 0, Math.PI * 2); g.lineWidth = h * 0.07; g.strokeStyle = '#fff'; g.stroke();
-    fitText(g, 'BUBI', x + w * 0.56, y + h * 0.54, w * 0.4, h * 0.6, 900, FONT);
-  };
   const plate = at.rect(256, 120, (g, w, h) => {
     g.fillStyle = '#96d21c'; g.fillRect(0, 0, w, h);
-    logo(g, w * 0.1, h * 0.24, w * 0.8, h * 0.52);
   });
   const panel = at.rect(240, 160, (g, w, h) => {
     g.fillStyle = '#96d21c'; g.fillRect(0, 0, w, h);
@@ -445,9 +436,8 @@ function bubi() {
       for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + (i * Math.PI) / 3; g.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a)); }
       g.closePath(); g.stroke();
     }
-    logo(g, w * 0.14, h * 0.2, w * 0.72, h * 0.3);
-    g.fillStyle = '#fff'; g.textAlign = 'center';
-    fitText(g, 'BUDAPEST', w / 2, h * 0.7, w * 0.6, h * 0.12, 700, FONT);
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'BUDAPEST', w / 2, h * 0.5, w * 0.6, h * 0.14, 700, FONT);
   });
   endDecal(k, dec, plate, 0.824, 0.36, 0.86, 1.02, 1);
   sideDecal(k, dec, panel, -0.67, -0.24, 0.58, 0.79, 0.083);

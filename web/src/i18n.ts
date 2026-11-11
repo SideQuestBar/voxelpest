@@ -72,7 +72,7 @@ const en = {
   locate: 'Show where I am', locating: 'Finding you…', located: 'You are here · tap the dot to walk from there',
   youHere: 'You are here: walk from here', outside: 'You’re outside the map: it shows central Budapest',
   locDenied: 'Location is turned off for this page', locFailed: 'Couldn’t find where you are',
-  vehicle: 'Vehicle', vTaxi: 'Taxi', vTrabant: 'Trabant 601', vPolice: 'Police', vBubi: 'Bubi', vBus: 'BKK bus', flashers: 'Blue lights',
+  vehicle: 'Vehicle', vTaxi: 'Taxi', vTrabant: 'Trabant 601', vPolice: 'Police', vBubi: 'Bicycle', vBus: 'BKK bus', flashers: 'Blue lights',
 };
 type Strings = typeof en;
 
@@ -143,7 +143,7 @@ const hu: Strings = {
   locate: 'Mutasd, hol vagyok', locating: 'Keresem, hol vagy…', located: 'Itt vagy · koppints a pöttyre, és onnan sétálhatsz',
   youHere: 'Itt vagy: séta innen', outside: 'Nem vagy a térképen: ez Belső-Budapestet mutatja',
   locDenied: 'Ennél az oldalnál ki van kapcsolva a helymeghatározás', locFailed: 'Nem sikerült megtalálni, hol vagy',
-  vehicle: 'Jármű', vTaxi: 'Taxi', vTrabant: 'Trabant 601', vPolice: 'Rendőrség', vBubi: 'Bubi', vBus: 'BKK busz', flashers: 'Villogó',
+  vehicle: 'Jármű', vTaxi: 'Taxi', vTrabant: 'Trabant 601', vPolice: 'Rendőrség', vBubi: 'Kerékpár', vBus: 'BKK busz', flashers: 'Villogó',
 };
 
 const STRINGS: Record<Lang, Strings> = { en, hu };

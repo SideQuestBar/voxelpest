@@ -17,9 +17,9 @@ Bridge to Petőfi Bridge.
 | ![The Chain Bridge and Buda Castle on a June morning](docs/screenshot2.jpg) The Chain Bridge and Buda Castle in June | ![The inner city in autumn rain](docs/screenshot1.jpg) The inner city in autumn rain |
 | ![Heroes' Square and the Városliget under snow](docs/screenshot3.jpg) Heroes' Square and the Városliget in December snow | ![A police car on Blaha Lujza tér](docs/screenshot5.jpg) Drive mode: a police car on Blaha Lujza tér |
 
-![Riding a MOL Bubi bike in drive mode](docs/screenshot4.jpg)
+![Riding a bike in drive mode](docs/screenshot4.jpg)
 
-Drive mode on a MOL Bubi bike.
+Drive mode on a bike.
 
 ## Quick start
 
