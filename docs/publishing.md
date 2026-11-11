@@ -43,7 +43,9 @@ quit. Its bottom bar names the map's data sources where the website shows the he
 covers the map, walking and driving for the mouse and keys, a touch screen or a controller. The viewer's URL
 parameters can be given as arguments: `./voxelpest-1.0.0-x86_64.AppImage view=parliament hour=20 lang=hu`. Links
 open in the desktop's browser. For a kiosk, `fullscreen=always` takes leaving full screen out of the menu (and the
-app refuses it), and `nolink=true` turns every link out of the app into plain text (and the app opens none).
+app refuses it), and `nolink=true` turns every link out of the app into plain text (and the app opens none). `ui=0` hides everything
+over the picture, as on the website (`./voxelpest-1.0.0-x86_64.AppImage ui=0 view=parliament`); Esc still opens the
+menu to quit.
 `./bv desktop dev` runs it on the viewer's dev server, in a window, with devtools on F12. It runs on Wayland as it
 is; if it ever stays on the loading screen, `--ozone-platform=x11` runs it through XWayland.
 

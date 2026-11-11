@@ -46,7 +46,8 @@ declare global {
 }
 
 const qs = new URLSearchParams(location.search);
-if (qs.get('ui') === '0') document.body.classList.add('noui');
+// ?ui=0 (or false / off; `ui=0` as an argument of the desktop app): nothing over the picture, for recordings and displays
+if (['0', 'false', 'off'].includes(qs.get('ui') ?? '')) document.body.classList.add('noui');
 if (qs.get('promo') === '0') document.body.classList.add('nopromo');
 // iOS Safari ignores user-scalable=no: a pinch anywhere would zoom the page rather than the map
 for (const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });

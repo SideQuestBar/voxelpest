@@ -421,7 +421,8 @@ Full description in `minecraft/README.md`. Working knowledge:
 - `ui/promo.ts`: the SideQuest Bar card and pin, and the "Play in Minecraft" card behind a feature flag
   (`minecraftEnabled()`: `?minecraft=1/0`, else `VITE_MINECRAFT`; off by default, and then no status requests). Its
   count from `VITE_MC_STATUS`, `api/minecraft` in dev (Vite's proxy to a local server), then api.mcstatus.io.
-  `?promo=0` hides the overlays, `?ui=0` everything.
+  `?promo=0` hides the overlays, `?ui=0` (`false`, `off`; `ui=0` as a desktop argument) everything over the picture:
+  `body.noui`, which also covers the touch controls, hints, toasts and the fps panel; the menu still opens.
 - Hosting (Cloudflare Pages): `public/404.html` must stay (without it Pages answers a missing tile with
   `index.html` and a 200, which the worker can't read; a 404 is an empty tile), `public/_headers` sets the caching,
   `vite.config.js` drops the map's tarball parts from `dist`. Limits: 20 000 files, 25 MiB each (the map is ~8 750).

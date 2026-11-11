@@ -541,7 +541,7 @@ body:not([data-mode="map"]) #locate, body:not([data-mode="map"]) #me-pin { displ
 /* drive mode: the vehicle picker under the switches (the chosen one shows its name), the police lights at its end */
 #vehicles { display: none; position: fixed; z-index: 4; right: calc(var(--gx) + var(--sar)); top: calc(54px + var(--sat)); }
 body[data-mode="drive"] #vehicles { display: flex; }
-body.noui #vehicles { display: none; }
+body.noui #vehicles, body.noui #touch, body.noui #hint, body.noui #toast, body.noui #fps, body.noui #tilebar { display: none !important; }
 #vehicles button { padding: 5px 9px; }
 #vehicles button svg { width: 16px; height: 16px; flex: none; }
 #vehicles button span { display: none; white-space: nowrap; }

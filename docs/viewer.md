@@ -100,7 +100,8 @@ sidequest, sidequest_inside), `mode` (map, walk, drive), `vehicle` (taxi, traban
 the picker's choice is remembered), `date` (`MM-DD`, e.g. `10-20`, or a day of the year), `hour` (0-24) and `weather`
 (clear, cloudy, rain, snow; the older `snow=1` still works), any of which starts on that date, at that hour and sky
 instead of live (the others then today, noon or clear), `live=0` (today, noon and clear rather than Budapest's time
-and weather), `lang` (en, hu), `ui=0`,
+and weather), `lang` (en, hu), `ui=0` (or `false` / `off`: nothing over the picture, no buttons, labels, cards, speedometer, touch
+controls or messages; keys, the mouse and a controller still work),
 `promo=0` (no Minecraft and bar overlays), `minecraft=1` or `0` (the Minecraft card's feature flag), `tutorial=1` (show
 the first-run guide even if it was dismissed) or `0` (never), `fps=1` (frame rate, frame time, draw calls, triangles
 and tiles in a corner), `shadow` (the shadow map's size, 4096 by default) and `err` (how many pixels a voxel may cover
