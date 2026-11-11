@@ -6,6 +6,7 @@ import { Input, PAD } from './controls/input';
 import { initAnalytics, track, trackSoon } from './analytics';
 import { keepAlive, startLite } from './recover';
 import { initPwa } from './pwa';
+import { initOffline } from './offline';
 import { Car } from './controls/drive';
 import { lampLit } from './controls/kit';
 import { MapControls } from './controls/orbit';
@@ -548,6 +549,7 @@ function frame(now: number) {
     window.__ready = true;
     initAnalytics();
     initPwa($<HTMLButtonElement>('#install-btn'));
+    initOffline($('#offline'));
     keepAlive(() => ({ mode, mb: Math.round(tiles.bytes / 1e6), tiles: tiles.shown }));
     if (lite.crashed) {
       console.warn('the last start died', lite.crashed, 'lite', lite.level);

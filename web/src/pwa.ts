@@ -1,7 +1,8 @@
 // The website as an installable app: the manifest (public/manifest.webmanifest, the desktop app's icon) and a small
-// service worker (public/sw.js: the page and its bundles for a quick or offline start, never the map's tiles). The
-// About box offers "Install as an app" where the browser lets a page ask (Chromium); elsewhere the browser's own menu
-// does it (Safari: Share, Add to Home Screen). Not in the desktop app, nor on the dev server.
+// service worker (public/sw.js: the page and its bundles for a quick or offline start, and the map once saved for
+// offline use from the About box, src/offline.ts). The About box offers "Install as an app" where the browser lets a
+// page ask (Chromium); elsewhere the browser's own menu does it (Safari: Share, Add to Home Screen). Not in the
+// desktop app, nor on the dev server.
 import { track } from './analytics';
 import { onLang, T } from './i18n';
 import { desktop } from './ui/desktop';

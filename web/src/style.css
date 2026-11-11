@@ -241,6 +241,12 @@ body.nolink #about a:not([href]) { color: inherit; }
 body.nolink a:not([href]) { cursor: default; }
 body.nolink #sq:not([href]):hover { background: #282949; }
 #install-btn { margin: 6px 8px 0 0; border: 0; background: var(--ink); color: #fff; border-radius: 7px; padding: 5px 12px; font-weight: 600; }
+#offline { margin: 10px 0 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+#offline p { margin: 0 0 6px; font-size: 13px; }
+#offline .off-bar { height: 5px; margin: 0 0 8px; border-radius: 3px; background: var(--line); overflow: hidden; }
+#offline .off-bar i { display: block; height: 100%; width: calc(var(--f, 0) * 100%); background: var(--accent); }
+#offline button { margin: 0 6px 0 0; border: 1px solid var(--line); background: #fff; border-radius: 7px; padding: 4px 12px; }
+#offline .off-go { border: 0; background: var(--ink); color: #fff; font-weight: 600; }
 #about-close { margin-top: 6px; border: 1px solid var(--line); background: #fff; border-radius: 7px; padding: 4px 12px; }
 
 /* the first-run overlay: how to move round, as small looping animations */

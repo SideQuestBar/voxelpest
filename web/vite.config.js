@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
@@ -38,8 +38,31 @@ function versionTiles() {
       m.tiles.v = h.digest('hex').slice(0, 16);
       writeFileSync(meta, JSON.stringify(m));
       console.log(`version-tiles: ${files.length} tiles, v=${m.tiles.v}`);
+      writeOffline(out, m.tiles.v);
     },
   };
+}
+
+// offline.json: what the website's "Save for offline" (src/offline.ts) puts in Cache Storage, as URLs relative to the
+// page: the shell (the page, bundles, icons) and the whole map, the tiles with the ?v= tiles.ts asks for. Written here
+// rather than in a plugin of its own: Rollup runs closeBundle hooks in parallel, and this needs the final meta.json.
+function writeOffline(out, v) {
+  const skip = new Set(['offline.json', 'sw.js', '_headers', '404.html', 'og.jpg']);
+  const shell = ['./'], data = [];
+  let bytes = 0;
+  for (const d of readdirSync(out, { recursive: true, withFileTypes: true })) {
+    if (!d.isFile()) continue;
+    const rel = join(d.parentPath, d.name).slice(out.length + 1).split('\\').join('/');
+    if (skip.has(rel) || rel.startsWith('voxelpest-data.tar.gz')) continue;
+    bytes += statSync(join(d.parentPath, d.name)).size;
+    if (rel.startsWith('data/tiles/')) data.push(`${rel}?v=${encodeURIComponent(v)}`);
+    else if (rel.startsWith('data/')) data.push(rel);
+    else shell.push(rel);
+  }
+  shell.sort();
+  data.sort();
+  writeFileSync(join(out, 'offline.json'), JSON.stringify({ v, bytes, shell, data }));
+  console.log(`offline: ${shell.length} shell files, ${data.length} map files, ${(bytes / 1e6).toFixed(0)} MB`);
 }
 
 // index.html's %SITE%: the address the site is published at, for the canonical link and the preview image (Open
