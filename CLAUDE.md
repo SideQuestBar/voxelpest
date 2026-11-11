@@ -526,6 +526,7 @@ tested). Electron's binary comes on first use (`electron --version` fetches it).
   that hid the hand-built gable; Nyugati's entrance canopy (`building=roof`) hid the glass front. `Plan` drops the
   parts inside the Opera's and the baths' outlines; the stations list theirs in `landmarks_city.DROP`.
 
+- **Discard before fwidth**: the dissolving tiles' `discard` ran early in the fragment shader (at clipping), and the surface code after it uses `fwidth()`; with some pixels of a quad discarded the derivatives are undefined, and on NVIDIA every pixel the dissolve kept came out black (a dark dithered square over each tile changing level). SwiftShader drew them right. The discard now comes last (after `dithering_fragment`). Found by reading pixels from the live site in Raf's Chrome (`readPixels` right after `__three.render()`, the fading copy on every shown tile).
 - **Hashes in the shader**: `hash3`'s `fract(sin(dot(...)))` of voxel coordinates (thousands of voxels) came out
   exactly 0 for about one voxel in six in SwiftShader, so a "hash > leaf" test kept those leaves in January. Decisions
   that must be uniform (which leaves drop, which turn first, fallen leaves) use `ihash` (integer hashing, material.ts);

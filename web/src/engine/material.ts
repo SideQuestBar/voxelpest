@@ -327,14 +327,16 @@ export function makeMaterial(meta: Meta, light = false) {
         vFace = int(va.x + 0.5); vS = max(va.w, 1.0);`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>\n${FRAG_PARS}`)
-      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-        #ifdef FADE
-        if (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) < uFade) discard;
-        #endif`)
       .replace('#include <color_fragment>', SURFACE)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = gMetal;')
       .replace('#include <emissivemap_fragment>', 'totalEmissiveRadiance += gEmit;')
+      // a dissolving tile drops its pixels last: after an early discard the surface's fwidth() (window detail, far
+      // fading) has no neighbours to compare with, and on NVIDIA (not SwiftShader) the pixels it kept came out black
+      .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+        #ifdef FADE
+        if (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) < uFade) discard;
+        #endif`)
       .replace('#include <aomap_fragment>', `#include <aomap_fragment>
         reflectedLight.indirectDiffuse *= mix(0.45, 1.0, vAo);`);
   };
