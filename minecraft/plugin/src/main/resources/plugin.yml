@@ -38,6 +38,10 @@ commands:
     description: Reload the map's settings and landmarks
     usage: /voxelpest reload
     permission: voxelpest.admin
+  clock:
+    description: Hold the sun at a time (kept across restarts), or give it back to config.yml's time
+    usage: /clock [HH:MM | ticks | noon | midnight | live]
+    permission: voxelpest.admin
 
 permissions:
   voxelpest.landmarks:

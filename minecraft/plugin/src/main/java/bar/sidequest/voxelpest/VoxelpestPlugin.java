@@ -61,11 +61,14 @@ public final class VoxelpestPlugin extends JavaPlugin implements Listener {
     private String mapBuilt = "", mapVersion = "";
     private StatusServer status;
     private BukkitTask clock;
+    /** /clock's held time in ticks (0 is 6:00), or null: config.yml's `time` rules. Kept in clock.yml. */
+    private Long held;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         loadAll();
+        loadHeld();
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new Protection(this), this);
         Bukkit.getScheduler().runTask(this, this::setUpWorld);   // after the worlds are loaded
@@ -239,7 +242,7 @@ public final class VoxelpestPlugin extends JavaPlugin implements Listener {
         w.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         w.setGameRule(GameRule.SPAWN_RADIUS, 0);
         w.setGameRule(GameRule.ALLOW_ENTERING_NETHER_USING_PORTALS, false);
-        boolean cycle = "cycle".equalsIgnoreCase(cfg().getString("time", "real"));
+        boolean cycle = held == null && "cycle".equalsIgnoreCase(cfg().getString("time", "real"));
         w.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, cycle);
         if ("clear".equalsIgnoreCase(cfg().getString("weather", "clear"))) {
             w.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
@@ -264,10 +267,11 @@ public final class VoxelpestPlugin extends JavaPlugin implements Listener {
     private void tick() {
         World w = world();
         String mode = cfg().getString("time", "real").toLowerCase(Locale.ROOT);
-        if (mode.equals("real")) {
+        if (held != null) {
+            w.setTime(held);
+        } else if (mode.equals("real")) {
             ZonedDateTime now = ZonedDateTime.now(ZoneId.of(cfg().getString("time-zone", "Europe/Budapest")));
-            long t = (((now.getHour() - 6 + 24) % 24) * 1000L + now.getMinute() * 1000L / 60) % 24000L;
-            w.setTime(t);  // 0 is 6:00, 6000 noon, 18000 midnight
+            w.setTime(ticks(now.getHour(), now.getMinute()));
         } else if (mode.equals("day")) {
             w.setTime(3000);
         }
@@ -433,7 +437,95 @@ public final class VoxelpestPlugin extends JavaPlugin implements Listener {
                 }
                 return true;
             }
+            case "clock" -> {
+                if (args.length == 0) {
+                    String mode = cfg().getString("time", "real");
+                    sender.sendMessage(Component.text(held != null
+                            ? "Held at " + clockText(held) + " (/clock live gives it back to config.yml's time: " + mode + ")"
+                            : "Following config.yml's time: " + mode + " (now " + clockText(world().getTime()) + ")",
+                            NamedTextColor.GRAY));
+                    return true;
+                }
+                String a = args[0].toLowerCase(Locale.ROOT);
+                if (a.equals("live") || a.equals("release") || a.equals("off")) {
+                    held = null;
+                    saveHeld();
+                    setUpWorld();  // the daylight rule back to config.yml's, and the clock ticks at once
+                    sender.sendMessage(Component.text("Clock: config.yml's time again (" + cfg().getString("time", "real") + ")", NamedTextColor.GREEN));
+                    return true;
+                }
+                Long t = parseClock(a);
+                if (t == null) {
+                    sender.sendMessage(Component.text("/clock HH:MM | ticks (0-23999, 0 is 6:00) | noon | midnight | live", NamedTextColor.GRAY));
+                    return true;
+                }
+                held = t;
+                saveHeld();
+                setUpWorld();
+                sender.sendMessage(Component.text("Clock held at " + clockText(t) + " until /clock live", NamedTextColor.GREEN));
+                return true;
+            }
             default -> { return false; }
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------- /clock
+    /** a clock time as Minecraft ticks: 0 is 6:00, 6000 noon, 18000 midnight */
+    private static long ticks(int hour, int minute) {
+        return (((hour - 6 + 24) % 24) * 1000L + minute * 1000L / 60) % 24000L;
+    }
+
+    private static String clockText(long t) {
+        long m = ((t % 24000 + 24000) % 24000 * 60 / 1000 + 6 * 60) % (24 * 60);
+        return String.format(Locale.ROOT, "%02d:%02d", m / 60, m % 60);
+    }
+
+    /** "21:30", "9", "noon", "midnight" or ticks ("18000"); null if it's none of them */
+    private static Long parseClock(String s) {
+        switch (s) {
+            case "noon" -> { return ticks(12, 0); }
+            case "midnight" -> { return ticks(0, 0); }
+            case "sunrise" -> { return 23000L; }
+            case "sunset" -> { return 12000L; }
+            default -> { }
+        }
+        try {
+            if (s.contains(":")) {
+                String[] p = s.split(":", 2);
+                int h = Integer.parseInt(p[0]), m = Integer.parseInt(p[1]);
+                return h >= 0 && h < 24 && m >= 0 && m < 60 ? ticks(h, m) : null;
+            }
+            int n = Integer.parseInt(s);
+            if (s.length() <= 2) return n >= 0 && n < 24 ? ticks(n, 0) : null;  // an hour
+            return n >= 0 && n < 24000 ? (long) n : null;                       // ticks
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private File heldFile() { return new File(getDataFolder(), "clock.yml"); }
+
+    private void loadHeld() {
+        File f = heldFile();
+        held = null;
+        if (!f.isFile()) return;
+        YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
+        if (y.isLong("held") || y.isInt("held")) held = Math.floorMod(y.getLong("held"), 24000L);
+        if (held != null) getLogger().info("clock held at " + clockText(held) + " (/clock live to release)");
+    }
+
+    private void saveHeld() {
+        File f = heldFile();
+        if (held == null) {
+            if (f.exists() && !f.delete()) getLogger().warning("could not delete " + f);
+            return;
+        }
+        YamlConfiguration y = new YamlConfiguration();
+        y.set("held", held);
+        try {
+            y.save(f);
+        } catch (IOException e) {
+            getLogger().warning("could not save " + f + ": " + e.getMessage());
         }
     }
 
@@ -447,6 +539,12 @@ public final class VoxelpestPlugin extends JavaPlugin implements Listener {
         }
         if (cmd.getName().equalsIgnoreCase("flyspeed") && args.length == 1) return List.of("1", "2", "3", "5", "7", "10");
         if (cmd.getName().equalsIgnoreCase("voxelpest") && args.length == 1) return List.of("reload");
+        if (cmd.getName().equalsIgnoreCase("clock") && args.length == 1) {
+            List<String> out = new ArrayList<>();
+            for (String s : List.of("live", "noon", "midnight", "sunrise", "sunset", "08:00", "18:30", "21:00"))
+                if (s.startsWith(args[0].toLowerCase(Locale.ROOT))) out.add(s);
+            return out;
+        }
         return List.of();
     }
 

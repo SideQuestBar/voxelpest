@@ -130,6 +130,9 @@ a view indoors (`walk`) stands on its floor. Hungarian names are in `ALIASES` in
 Fire, explosions, liquids flowing, leaves decaying, grass spreading, ice, growth, pistons and mob griefing are all
 cancelled. Nobody takes damage or gets hungry, mobs don't spawn and the weather stays clear. A world border and a soft
 edge keep players on the map. The sun follows Budapest's clock (`time: real`; `day` and `cycle` are the other choices).
+Admins (`voxelpest.admin`: operators, `docker exec voxelpest-minecraft rcon-cli op <name>`) can hold it with
+`/clock 21:30` (also an hour, ticks, `noon`, `midnight`, `sunrise`, `sunset`) until `/clock live`; the held time is in
+the data's `plugins/voxelpest/clock.yml`, so it outlasts restarts and new maps. `/clock` alone says what it is doing.
 Players with the `voxelpest.build` permission (nobody by default; give it with a permissions plugin such as LuckPerms)
 can change blocks.
 
