@@ -1161,6 +1161,29 @@ if gel is not None:
     lev = 107.6  # m above sea level, like G here
     G[rr, cc] -= np.clip(G[rr, cc] - lev, 0, None) * fade
     note(f"ground: the Gellért's front garden down to Szent Gellért tér's level ({lev:.1f} m)")
+# Streets on flat ground that FABDEM reads high under their blocks, with no surveyed point: Bartók Béla út runs level
+# across Lágymányos from Szent Gellért tér, FABDEM has it at 119 m from 60 m out of the square (107.5 m): a 12 m ramp.
+# The ground is lowered (never raised) to the street's level, rising gently with the distance from the square, in full
+# within 15 m of the street and fading out 60 m from it (behind the houses on either side)
+STREETS = [("Bartók Béla út", (618.0, 3787.0), 108.3, 0.0025)]
+for nm_, (sx_, sy_), e0_, k_ in STREETS:
+    ways_ = [ln for oid, t, ln in osm.lines if t.get("name") == nm_ and t.get("highway") and not t.get("bridge")
+             and not t.get("tunnel")]
+    if not ways_:
+        continue
+    line_ = shapely.ops.unary_union(ways_)
+    rr, cc = cells_of(line_.buffer(60.0))
+    pts_ = shapely.points(cc + 0.5, rr + 0.5)
+    dist_ = shapely.distance(line_, pts_)
+    from scipy.spatial import cKDTree
+    sp_ = np.array([(q.x, q.y) for ln in ways_ for q in (ln.interpolate(d) for d in np.arange(0, ln.length, 2.0))])
+    _, ix_ = cKDTree(sp_).query(np.stack([cc + 0.5, rr + 0.5], 1))  # the target level from the street's nearest point
+    nx_, ny_ = sp_[ix_, 0], sp_[ix_, 1]
+    lev_ = e0_ + k_ * np.hypot(nx_ - sx_, ny_ - sy_)
+    fade_ = np.clip((60.0 - dist_) / 45.0, 0, 1)
+    drop_ = np.clip(G[rr, cc] - lev_, 0, None) * fade_
+    G[rr, cc] -= drop_
+    note(f"ground: {nm_} down to its street's level, by up to {float(drop_.max()):.1f} m")
 # the palace's Lions' Court: shut in by the wings, the 30 m models see their roofs in it and lifted it to the eaves;
 # it lies level with the Hunyadi court, through the Lions' Gate
 courts_ = {t.get("name"): g_ for oid, k, t, g_ in osm.areas if t.get("name") in ("Oroszlános udvar", "Hunyadi-udvar")}
