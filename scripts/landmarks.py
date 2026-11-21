@@ -404,6 +404,8 @@ class Plan:
         self.names += landmarks_city.NAMES + landmarks_more.NAMES + landmarks_kossuth.NAMES + landmarks_hilton.NAMES
         self.names += landmarks_citadella.NAMES + landmarks_erkel.NAMES + landmarks_rakoczi.NAMES + landmarks_blaha.NAMES
         self.names += landmarks_sidequest.NAMES + landmarks_westend.NAMES
+        for m in new_modules():
+            self.names += m.NAMES
         self.bridges = {CHAIN, LIBERTY_BR, ELISABETH, MARGIT, PETOFI}
         self.classic = {PARLIAMENT, BASILICA, MATTHIAS, PALACE}
         drop = {237397585, 1503074602, 237397586,                       # the Parliament's spire, lantern, dome
@@ -419,6 +421,12 @@ class Plan:
         self.ground_keep = landmarks_hilton.ground_keep(osm)  # (outline, height) the ground model still sees
         # outlines that still stand for green, trees, lamps, furniture and the ground model (voxelize.py's `held`)
         self.ground_cover = [self.area[i][3] for i in landmarks_rakoczi.KEEP_GROUND if i in self.area]
+        for m in new_modules():  # Nov 2026's modules: DROP, and KEEP = (outline, height) for both of the above
+            drop |= m.DROP
+            for i, h in m.KEEP:
+                if i in self.area:
+                    self.ground_keep.append((self.area[i][3], h))
+                    self.ground_cover.append(self.area[i][3])
         # the baths' and the Opera's own building parts inside the outlines they replace
         for big in (landmarks_city.SZECHENYI, landmarks_city.OPERA):
             if big in self.area:
@@ -444,6 +452,12 @@ class Plan:
                     self.gabriel = (oid, t, g)
                     drop.add(oid)
         self.drop = {str(i) for i in drop}
+
+
+def new_modules():
+    """the modules of Nov 2026's second round (NAMES, DROP, KEEP, BUILDERS each)"""
+    import landmarks_hosok
+    return [landmarks_hosok]
 
 
 # ------------------------------------------------------------------------------------------------ build
@@ -478,7 +492,8 @@ def build(ctx):
                      *landmarks_city.BUILDERS, *landmarks_more.BUILDERS, *landmarks_kossuth.BUILDERS,
                      *landmarks_hilton.BUILDERS, *landmarks_citadella.BUILDERS, *landmarks_erkel.BUILDERS,
                      *landmarks_rakoczi.BUILDERS, *landmarks_blaha.BUILDERS, *landmarks_sidequest.BUILDERS,
-                     *landmarks_westend.BUILDERS, *landmarks_statues.BUILDERS):
+                     *landmarks_westend.BUILDERS, *[b for m in new_modules() for b in m.BUILDERS],
+                     *landmarks_statues.BUILDERS):
         n0, p0 = len(S.prims), len(S.points)
         try:
             fn(S, ctx, plan)
@@ -1811,73 +1826,9 @@ def liberty_statue(S, ctx, plan):
 
 
 def heroes_square(S, ctx, plan):
-    """Hősök tere's Millennium Monument (Albert Schickedanz, György Zala; 1896-1929): the Archangel Gabriel on a
-    36 m column over the seven chieftains, and two quadrant colonnades with statues, chariots on their ends."""
-    P, area = ctx["P"], ctx["area"]
-    mon = area[MILLENNIUM][3]
-    st, st2 = P("#e2dccb"), P("#d0c8b3")
-    br = P("#3f5a4c", METAL)
-    gold = P("#d4ad55", METAL)
-    polys = sorted(getattr(mon, "geoms", [mon]), key=lambda g: -g.length / max(g.area, 1))
-    col_xy = plan.gabriel[2].centroid if plan.gabriel else min(polys, key=lambda g: g.length / g.area).centroid
-    z0 = ctx["ground_m"](col_xy.x, col_xy.y)
-    for g in polys:
-        cx, cy, L1, L2, ang = rect_of(g)
-        if L1 < 25:  # the chieftains' plinth
-            fr = Frame(cx, cy, z0, ang)
-            S.add(Poly(g, z0 - 2, z0 + 1.2, st2))
-            S.add(Poly(g.buffer(-1.0), z0 + 1.2, z0 + 4.0, st))
-            for k in range(7):
-                a = TAU * k / 7
-                fh = fr.at(math.cos(a) * 4.2, math.sin(a) * 4.8, 4.0, a)
-                S.add(Ellipsoid(fh.at(0, 0, 1.3), 1.4, 0.55, 0.75, br))
-                S.add(Capsule(fh, (0.9, 0, 1.4), (1.6, 0, 2.4), 0.35, br))
-                S.add(Capsule(fh, (0, 0, 1.8), (0, 0, 3.2), 0.38, br))
-                S.add(Ellipsoid(fh.at(0, 0, 3.45), 0.28, 0.28, 0.32, br))
-            continue
-        S.add(Poly(g, z0 - 2, z0 + 2.4, st2))
-        S.add(Poly(g.buffer(-0.5), z0 + 10.6, z0 + 12.4, st))
-        S.add(Poly(g, z0 + 12.4, z0 + 13.0, st2))
-        for a, b, n in ring_segments(g, 2.0):
-            fr2 = seg_frame(a, b, n, 0)
-            L = float(np.hypot(*(b - a)))
-            for t_ in np.arange(1.2, L - 0.6, 3.0):
-                S.add(Lathe(fr2.at(t_, 0.9), z0 + 2.4, z0 + 10.6, lambda t: 0.5 + 0.12 * (t > 0.92), st))
-            if L > 6:
-                for t_ in np.arange(2.7, L - 1.5, 6.0):
-                    fs = fr2.at(t_, 2.2, z0 + 2.4)
-                    S.add(Lathe(fs, 0, 1.0, cyl(0.6), st2))
-                    S.add(Lathe(fs, 1.0, 3.0, lambda t: 0.45 - 0.12 * t, br))
-                    S.add(Ellipsoid(fs.at(0, 0, 3.3), 0.25, 0.25, 0.3, br))
-        # the pavilions at the colonnade's ends, each with a bronze group on top
-        c = np.array(g.exterior.coords)
-        far = max(((i, j) for i in range(len(c)) for j in range(i)), key=lambda ij: np.hypot(*(c[ij[0]] - c[ij[1]])))
-        for e in far:
-            pv = g.intersection(Point(*c[e]).buffer(6.5))
-            if pv.is_empty:
-                continue
-            S.add(Poly(pv, z0 + 2.4, z0 + 14.5, st))
-            S.add(Poly(pv.buffer(0.4), z0 + 14.5, z0 + 15.2, st2))
-            pc = pv.centroid
-            fh = Frame(pc.x, pc.y, z0 + 15.2, ang)
-            S.add(Box(fh, -2.0, 2.0, -1.0, 1.0, 0, 1.6, br))
-            S.add(Ellipsoid(fh.at(1.2, 0, 2.2), 1.3, 0.5, 0.8, br))
-            S.add(Capsule(fh, (-0.8, 0, 1.6), (-0.6, 0, 4.0), 0.4, br))
-            S.add(Capsule(fh, (-0.6, 0, 3.4), (0.4, 0.9, 4.6), 0.2, br))
-    # Gabriel's column: a Corinthian shaft on a stepped base, the globe and the archangel with the holy crown
-    fc = Frame(col_xy.x, col_xy.y, z0, 0)
-    S.add(Lathe(fc, 4.0, 6.0, cyl(2.4), st2, n=4, rot=math.pi / 4))
-    S.add(Lathe(fc, 6.0, 33.0, lambda t: 1.15 - 0.22 * t, st))
-    S.add(Lathe(fc, 6.0, 8.5, cyl(1.5), br))
-    S.add(Lathe(fc, 33.0, 34.6, cone(1.0, 1.7), br))
-    S.add(Lathe(fc, 34.6, 35.2, cyl(1.8), st2, n=4, rot=math.pi / 4))
-    S.add(Ellipsoid(fc.at(0, 0, 35.9), 0.75, 0.75, 0.75, gold))
-    S.add(Lathe(fc, 36.4, 39.2, lambda t: 0.55 - 0.2 * t, br))
-    S.add(Ellipsoid(fc.at(0, 0, 39.5), 0.28, 0.28, 0.33, br))
-    for sv in (-1, 1):
-        S.add(Capsule(fc, (0, sv * 0.3, 38.6), (-0.35, sv * 1.6, 40.6), 0.3, br))
-    S.add(Capsule(fc, (0, 0.4, 38.8), (0.35, 0.6, 40.4), 0.15, br))
-    S.add(Ellipsoid(fc.at(0.4, 0.6, 40.6), 0.25, 0.25, 0.2, gold))
+    """Hősök tere's Millennium Monument: landmarks_hosok.heroes (redone Nov 2026)."""
+    import landmarks_hosok
+    landmarks_hosok.heroes(S, ctx, plan)
 
 
 # ------------------------------------------------------------------------------------------------ Pest
