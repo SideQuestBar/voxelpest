@@ -35,7 +35,10 @@ Each solid fills, carves, paints only voxels of given colours (windows on a wall
 | Buda Castle | the National Gallery's dome on its drum of paired columns; the palace at its real height with copper hipped roofs and rows of windows; the Lions' Court level with the Hunyadi court |
 | Liberty Statue | the pedestal, the 14 m figure with the palm leaf facing down the new east cut, the side figures on their plinths, the white cross of 2025, the level terrace |
 | Citadella | the fortress as renewed in 2020-26: battered walls with their walk, the Rondella with its court and glass foyer, the white concrete mouths and the east cut, the park on top, and the 12 × 6 m national flag on its 36 m mast |
-| Heroes' Square | the colonnades with statues and chariots, Gabriel's column, the seven chieftains |
+| Heroes' Square | the colonnades on one circle with the kings between the columns and the chariots and groups on the end piers, Gabriel's column on the chieftains' plinth with the seven horsemen, the memorial stone, the paving's rectangles and meander bands |
+| Museum of Fine Arts | the octastyle Corinthian portico, the Ionic side wings, the basilica hall, the glass-roofed courts |
+| Műcsarnok | red brick with terracotta and blue friezes, the gilded pediment over six columns, the apse, the skylights |
+| Vajdahunyad Castle | the Baroque wing under slate with domed pavilions, the Gothic and Renaissance ranges, the Ják chapel's west towers, the gate tower, the Apostles' tower and the round towers |
 | Great Market Hall | brick walls in bands, the tiled roof with its glazed ridge, the front gable and towers |
 | Rákóczi tér market hall | the crossing naves with aisles and corner pavilions, yellow brick with red bands, the main gable's great arched window in blue iron, the clock, the cornice and the city's arms, the wings' balustrades and obelisks |
 | Dohány Street Synagogue | the striped brick towers and their gilded onion domes |
@@ -61,6 +64,16 @@ Each solid fills, carves, paints only voxels of given colours (windows on a wall
 | Corvin Palace | the old Corvin department store on Blaha Lujza tér with its stone front back: the arcade of round arches, giant fluted pilasters, the frieze, the cornice and the roof balustrade |
 | Europeum | the cream stone shopping centre and hotel across the square: the glazed retail base, the grid of windows, the open stone frame at the corner, the red letters on the roof |
 | Danube boats | every ship moored along the quays from its outline: pointed bows upstream, white decks with window bands and sun decks, awnings on the restaurant boats; the A38 (a Ukrainian stone carrier with its wheelhouse aft and a glass pavilion on deck) and its exhibition barge; the Kossuth paddle steamer with its paddle boxes and yellow funnel |
+| Sándor Palace | the white Neoclassical block round its court, the five-bay centre with the pediment dated MDCCCVI, the porch carrying the balcony, pedimented windows, guards' boxes, the brown tiled roof |
+| BME CH building | orange-red brick over a stone ground floor, cream bands and arched top windows, the cream south front under a dark hipped roof, the court's hall |
+| Corvin Cinema | the rounded cream front to the passage, the long hall under its pale green roof, the canopy and the red CORVIN letters |
+| Corvin Plaza | travertine and bands of glass round the block, green roofs, the glass corner with the purple dots |
+| Museum of Applied Arts | yellow brick and Zsolnay friezes, green-and-yellow glazed roofs in diamonds, the dome over the entrance, the spired tower, the corner turrets, the glass-roofed hall |
+| Semmelweis University, Üllői út 26 | the red-brick palazzo front over a rusticated ground floor with paired arched windows, the cream range behind |
+| Former Slovak Lutheran church | the ochre hall church in the court behind Rákóczi út 57 with its copper spire, reached through the house's arched gateway |
+| St Margaret's, Lehel tér | the Zsámbék-style basilica in pale limestone, two west towers with stone pyramids, clerestory, transept and apse |
+| Arena Mall | the long white box banded in glass, the dark cinema block, three elliptical domes on the roof |
+| MTK Sportpark | the ribbed hall on its podium, skylight stripes along the roof |
 | SideQuest Bar | the bar that made the map, inside and out: the shopfront on Klauzál utca, the room, the bar, the steel stair, the mezzanine with the foosball table, the darts corner, the corridor and the toilets, all walkable |
 
 ## Parliament (Országház)
@@ -1401,3 +1414,39 @@ counter's length (shortened by a metre at the mezzanine's end to leave a way beh
 [lc1]: https://telex.hu/belfold/2025/07/14/gellert-hegy-szabadsag-szobor-kereszt
 [lc2]: https://444.hu/2024/08/12/kereszt-kerul-a-gellert-hegyen-a-szabadsag-szoborra
 [lc3]: https://www.mapillary.com/app/?pKey=1080850971102692
+
+
+## November 2026: Városliget, Buda and Pest additions
+
+Placed on OSM's outlines and the Esri aerial resampled onto the grid (`asite.py`-style overlays with 50 m ticks), detailed
+from Mapillary photos looking at each building. Grid metres throughout.
+
+- **Hősök tere.** The colonnades are arcs of one circle round (4363.6, 2379.8) at radii 46.0 and 51.8 m, from ±20.6° to
+  ±59.8° about the axis (−2.5°). The kings stand at OSM's statue nodes, on 4.2 m pedestals; the chieftains ride on OSM's
+  12.5 × 16 m plinth, which Gabriel's column stands on. Paving: 7 × 6 m rectangles along the axis, meander bands at
+  |v| 6–8.5 m, 7 × 12.5 m rectangles beyond.
+- **Museum of Fine Arts** (front at (4344, 2266), 4.2°): the octastyle Corinthian portico, the Ionic side wings, the
+  basilica hall and two glass-roofed courts. **Műcsarnok**: red brick, a gilded pediment, the apse to the north.
+- **Vajdahunyad Castle**: the Baroque wing under slate with domed pavilions, the Gothic and Renaissance ranges, the Ják
+  chapel with two west towers, and the towers by OSM's outlines (gate 27 + 10 m, apostles 25 + 14 m).
+- **Sándor Palace** (front edge (810.3, 1830.7)–(851.2, 1842.6)): the five-bay centre with a pediment dated MDCCCVI,
+  the porch carrying the balcony, guards' boxes. The east side shows the storeys below the square.
+- **BME CH**: orange-red brick, a cream stone south front, a dark hipped roof over its pavilion at (628, 3905).
+- **Gellért baths' garden**: OSM maps the pools only, so the ground round them came out as bare grey paving. It now has
+  terracotta paving from the wave pool to the arcade, lawns and trees in the garden past the children's pool and on
+  the slope (`landmarks_more.baths_grounds`).
+- **Bartók Béla út**: FABDEM reads 119 m along it from 60 m out of Szent Gellért tér (107.5 m), which made a 12 m ramp
+  off the square. voxelize.py's `STREETS` puts a point every 40 m along the street at 108.3 m, rising 0.25 m per 100 m.
+- **Corvin Cinema** (axis 46.6°): the rounded front to the passage from Corvin köz, the pale green roof, CORVIN.
+- **Corvin Plaza**: travertine with bands of glass, green roofs, the glass corner with its dots at (1907.5, 4467).
+- **Museum of Applied Arts**: yellow brick with Zsolnay friezes, green-and-yellow glazed roofs in diamonds, the dome
+  over the entrance at (1686, 4296), the tower at (1641, 4276), five turrets. The ranges are ~15 m deep; past them
+  the court's hall under glass.
+- **Semmelweis, Üllői út 26**: the red-brick palazzo front 24 m deep, the cream range behind it.
+- **The former Slovak Lutheran church** (court behind Rákóczi út 57): the tower over the north front, a copper spire.
+  OSM's `building_passage` (2918.3, 3614.5)–(2911.6, 3633.0) is carved as a 4.6 m wide arched gateway and the court
+  is paved to the door.
+- **St Margaret's, Lehel tér** (west front at (3478.15, 1367.7), −17.5°): two west towers with stone pyramids to 46 m,
+  a basilica nave and aisles, a transept and an apse.
+- **Arena Mall**: a white box banded in glass, the dark cinema block 62 m from the north-west end, three elliptical
+  domes at the aerial's positions. **MTK Sportpark**: a ribbed box on a lower podium, skylight stripes.
