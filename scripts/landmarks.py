@@ -456,8 +456,9 @@ class Plan:
 
 def new_modules():
     """the modules of Nov 2026's second round (NAMES, DROP, KEEP, BUILDERS each)"""
+    import landmarks_buda
     import landmarks_hosok
-    return [landmarks_hosok]
+    return [landmarks_hosok, landmarks_buda]
 
 
 # ------------------------------------------------------------------------------------------------ build
