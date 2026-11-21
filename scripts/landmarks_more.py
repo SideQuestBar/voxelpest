@@ -348,6 +348,34 @@ def gellert_garden(S, ctx, hotel, wave, rim, water):
         S.add(Poly(Point(kx, ky).buffer(kr), zk - 1.2, zk + 0.6, 0, mode="carve"))
         S.add(Poly(Point(kx, ky).buffer(kr), zk - 1.2, zk - 0.3, water))
         S.add(Poly(Point(kx, ky).buffer(kr + 0.6).difference(Point(kx, ky).buffer(kr)), zk - 1.2, zk + 0.9, white))
+    baths_grounds(S, ctx, terra, leaf)
+
+
+# the baths' garden round the pools (aerial): terracotta paving from the wave pool to the arcade, lawns under trees in
+# the garden past the children's pool and on the slope north-west of the wave pool; unmapped, it was bare grey paving
+BATH_PAVED = [(482.0, 3622.0), (505.0, 3612.0), (530.0, 3606.0), (546.0, 3612.0), (545.0, 3642.0), (535.0, 3660.0),
+              (528.0, 3680.0), (505.0, 3668.0), (486.0, 3648.0)]
+BATH_LAWNS = [[(543.0, 3606.0), (572.0, 3612.0), (570.0, 3640.0), (548.0, 3642.0), (544.0, 3625.0)],
+              [(472.0, 3608.0), (500.0, 3606.0), (494.0, 3622.0), (484.0, 3633.0), (470.0, 3626.0)],
+              [(484.0, 3650.0), (500.0, 3664.0), (512.0, 3684.0), (496.0, 3690.0), (476.0, 3662.0)]]
+BATH_TREES = [(550.0, 3612.0), (561.0, 3616.0), (566.0, 3628.0), (553.0, 3633.0), (478.0, 3615.0), (487.0, 3610.0),
+              (480.0, 3626.0), (490.0, 3664.0), (500.0, 3676.0), (486.0, 3672.0)]
+
+
+def baths_grounds(S, ctx, terra, leaf):
+    C, g_at = ctx["C"], ctx["ground_m"]
+    ground = [C[k] for k in ("paving", "paving2", "road_paving", "concrete", "sett", "gravel", "dirt", "asphalt")]
+    zs = [g_at(x, y) for x, y in BATH_PAVED]
+    z0, z1 = min(zs) - 3.0, max(zs) + 3.0
+    S.add(Poly(Polygon(BATH_PAVED), z0, z1, terra, mode="paint", targets=ground))
+    for pts in BATH_LAWNS:
+        zs = [g_at(x, y) for x, y in pts]
+        S.add(Poly(Polygon(pts), min(zs) - 3.0, max(zs) + 3.0, C["grass"], mode="paint", targets=ground + [terra]))
+    trunk = C["trunk"]
+    for k, (x, y) in enumerate(BATH_TREES):
+        z, h = g_at(x, y), 7.0 + (k * 37 % 5)
+        S.add(Lathe(Frame(x, y, z), -0.5, h * 0.55, cyl(0.35), trunk))
+        S.add(Ellipsoid(Frame(x, y, z + h * 0.62), 2.6 + (k % 3) * 0.4, 2.6 + (k % 3) * 0.4, h * 0.36, leaf))
 
 
 # ------------------------------------------------------------------------------------------------ BME K
