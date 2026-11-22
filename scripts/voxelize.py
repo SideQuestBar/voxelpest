@@ -34,6 +34,7 @@ import landmarks
 import landmarks_erkel
 import landmarks_sidequest
 import landmarks_westend
+import landmarks_xl
 import sidequest
 import tiles
 import trees as trees_mod
@@ -2397,7 +2398,11 @@ for key, args in {"parliament": ("Parliament", "Országház", (-1, 0.15), 520, 0
                   "gellerthotel": ("Gellért Hotel and Baths", "Hotel Gellért", (0.97, 0.22), 300, 0.18),
                   "bme": ("BME Building K", "K épület", (0.75, 0.66), 380, 0.17),
                   "museum": ("Hungarian National Museum", "Magyar Nemzeti Múzeum", (-0.98, -0.17), 230, 0.22),
-                  "a38": ("A38 Ship", "A38 Hajó", (0.3, -1), 200, 0.25)}.items():
+                  "a38": ("A38 Ship", "A38 Hajó", (0.3, -1), 200, 0.25),
+                  "music": ("House of Music", "Magyar Zene Háza", (0.6, -1), 200, 0.35),
+                  "rozsak": ("Rózsák tere", "Árpád-házi Szent Erzsébet-templom", (-0.56, 0.83), 240, 0.28),
+                  "jozsef": ("Szent József Church", "Szent József-templom", (-1, -0.08), 170, 0.25),
+                  "nac": ("National Athletics Centre", "Zsivotzky Gyula Nemzeti Atlétikai Központ", (0.5, -1), 520, 0.35)}.items():
     v = view(*args)
     if v:
         views[key] = v
@@ -2442,6 +2447,15 @@ if cit_ is not None:  # the Citadella from over the Danube to the north-east: th
     cam = c_ + d_ * 230
     views["citadella"] = dict(label="Citadella", pos=[round(float(cam[0]), 1), round(zc_ + 95, 1), round(float(cam[1]), 1)],
                               target=[round(float(c_[0]), 1), round(zc_ + 12, 1), round(float(c_[1]), 1)])
+dl_ = next((g_ for oid, k, t, g_ in osm.areas if oid == landmarks_xl.DELI), None)
+if dl_ is not None and "deli" not in views:  # Déli has no name on its outline: from over Krisztina körút, the hall and the rotunda
+    c_ = np.array(dl_.centroid.coords[0])
+    zc_ = float(g[int(c_[1]), int(c_[0])])
+    d_ = 0.3 * EAST + 1.0 * NORTH
+    d_ /= np.linalg.norm(d_)
+    cam = c_ + d_ * 300 * math.cos(0.3)
+    views["deli"] = dict(label="Déli Station", pos=[round(float(cam[0]), 1), round(zc_ + 6 + 300 * math.sin(0.3), 1), round(float(cam[1]), 1)],
+                         target=[round(float(c_[0]), 1), round(zc_ + 6, 1), round(float(c_[1]), 1)])
 pyl = [g_ for oid, k, t, g_ in osm.areas if oid in (197110387, 197110388)]
 if len(pyl) == 2 and "Széchenyi lánchíd" in lp:  # along the Chain Bridge from Pest: its arches, the Castle behind
     pa, pb = sorted((np.array(p_.centroid.coords[0]) for p_ in pyl), key=lambda c: c[0])
@@ -2505,7 +2519,8 @@ VIEW_HU = {"overview": "Áttekintés", "parliament": "Országház", "kossuth": "
            "sidequest_inside": "A SideQuest Bar belülről",
            "gellerthotel": "Gellért Szálló és fürdő", "bme": "BME K épület", "museum": "Magyar Nemzeti Múzeum",
            "a38": "A38 hajó", "hilton": "Hilton Budapest", "erkel": "Erkel Színház", "blaha": "Blaha Lujza tér",
-           "westend": "WestEnd City Center"}
+           "westend": "WestEnd City Center", "music": "Magyar Zene Háza", "rozsak": "Rózsák tere",
+           "jozsef": "Szent József-templom", "deli": "Déli pályaudvar", "nac": "Nemzeti Atlétikai Központ"}
 for k_, v_ in views.items():
     v_["label_hu"] = VIEW_HU.get(k_, v_["label"])
 note("views:", list(views))

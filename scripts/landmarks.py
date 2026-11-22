@@ -459,7 +459,8 @@ def new_modules():
     import landmarks_buda
     import landmarks_hosok
     import landmarks_pest
-    return [landmarks_hosok, landmarks_buda, landmarks_pest]
+    import landmarks_xl
+    return [landmarks_hosok, landmarks_buda, landmarks_pest, landmarks_xl]
 
 
 # ------------------------------------------------------------------------------------------------ build

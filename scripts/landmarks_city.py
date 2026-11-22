@@ -639,8 +639,7 @@ def zoo(S, ctx, plan):
     mountain, and the Little Rock; the Elephant House, an Ottoman pavilion whose dome and minaret are clad in Zsolnay
     ceramic; and the main gate on Állatkerti körút, its pylons carrying stone elephants, with a mosaic frieze."""
     P, area = ctx["P"], ctx["area"]
-    if ROCK in area:
-        rock(S, ctx, area[ROCK][3], 33.0, 7)
+    # the Great Rock: landmarks_xl.great_rock
     if ROCK_SMALL in area:
         rock(S, ctx, area[ROCK_SMALL][3], 13.0, 11)
     cream, ochre, red = P("#ece2ca"), P("#d7b26e"), P("#a8553b")
