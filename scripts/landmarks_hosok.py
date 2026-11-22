@@ -175,10 +175,10 @@ def heroes(S, ctx, plan):
     st, st2, st3 = P("#e3dccb"), P("#d2c9b4"), P("#bfb6a1")
     bronze, dark = P("#4d7564", METAL), P("#3e4a42", METAL)
     gold = P("#d4ad55", METAL)
-    C = (4875.6, 2379.8)
+    C = (7179.6, 2379.8)
     ang = math.radians(-2.5)
     fc = Frame(C[0], C[1], 0, ang)
-    z0 = ctx["ground_m"](4882, 2380)
+    z0 = ctx["ground_m"](7186, 2380)
     R0, R1 = 46.0, 51.8  # inner and outer radius of the colonnades
     nodes = {t.get("name"): (p.x, p.y) for oid, t, p in osm.nodes
              if Point(p.x, p.y).distance(Point(*C)) < 60 and t.get("name")}
@@ -248,7 +248,7 @@ def heroes(S, ctx, plan):
         S.add(Box(fk, 0.85, 0.95, -0.7, 0.7, 2.1, 3.9, dark))  # the relief under each
         statue(S, fk, 4.2, dark, 1.7)
     # Gabriel's column on its stepped base, the chieftains' plinth in front of it
-    gx, gy = nodes.get("Gábriel arkangyal", (4881.0, 2378.8))
+    gx, gy = nodes.get("Gábriel arkangyal", (7185.0, 2378.8))
     fcol = Frame(gx, gy, z0, ang)
     S.add(Box(fcol, -2.9, 2.9, -2.9, 2.9, 6.6, 7.2, st2))
     S.add(Lathe(fcol, 7.2, 8.4, cone(1.6, 1.25), st2))
@@ -303,7 +303,7 @@ def heroes(S, ctx, plan):
         inside = shapely.contains_xy(sq, X, Y)
         U = ((X - C[0]) * fc.ca + (Y - C[1]) * fc.sa).astype(np.float32)
         V = (-(X - C[0]) * fc.sa + (Y - C[1]) * fc.ca).astype(np.float32)
-        zs = [ctx["ground_m"](x_, y_) for x_ in range(4787, 4917, 20) for y_ in range(2320, 2440, 20) if sq.contains(Point(x_, y_))]
+        zs = [ctx["ground_m"](x_, y_) for x_ in range(7091, 7221, 20) for y_ in range(2320, 2440, 20) if sq.contains(Point(x_, y_))]
         base, line = P("#62675f"), P("#cbc7b9")
 
         def pave(f, wa):
@@ -340,7 +340,7 @@ def fine_arts(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, FINE_ARTS)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(4856.0, 2266.0, b0, math.radians(4.2))
+    fr = Frame(7160.0, 2266.0, b0, math.radians(4.2))
     stone, base, trim = P("#cdbb96"), P("#b19c78"), P("#ddd0b2")
     col = P("#d9cdb0")
     roofc, glass = P("#66716c", ROOF), P("#8fa5aa", GLASS)
@@ -392,7 +392,7 @@ def fine_arts(S, ctx, plan):
     # the rustication on the base and the windows of the hall's flanks
     windows_on(S, side(fr.at(0, -33.5), 0), 15.1, -18, 18, 4.5, [(12.5, 19.0)], 1.0, win, walls)
     windows_on(S, side(fr.at(0, -33.5), 2), 15.1, -18, 18, 4.5, [(12.5, 19.0)], 1.0, win, walls)
-    S.clear.append((4856.0, 2200.0, 75.0))
+    S.clear.append((7160.0, 2200.0, 75.0))
 
 
 # ------------------------------------------------------------------------------------------------ Műcsarnok
@@ -404,7 +404,7 @@ def mucsarnok(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, MUCSARNOK)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(4825.0, 2462.5, b0, math.radians(-3.0))
+    fr = Frame(7129.0, 2462.5, b0, math.radians(-3.0))
     brick, terra, terra2 = P("#a5523d"), P("#d7b06a"), P("#c39552")
     base, col = P("#c8bba0"), P("#ddd2b6")
     gold, blue = P("#cfa64a", METAL), P("#37578a")
@@ -476,7 +476,7 @@ def mucsarnok(S, ctx, plan):
     S.add(Roof(pf, 5.4, 5.9, -6.0, 6.0, 15.2, 2.2, blue))
     S.add(Roof(pf, -0.3, 5.5, -10.5, 10.5, 14.9, 4.2, roofc))
     windows_on(S, pf, 0.0, -9, 9, 6.0, [(2.0, 9.5)], 1.3, win, [brick, terra2, terra])
-    S.clear.append((4825.0, 2515.0, 60.0))
+    S.clear.append((7129.0, 2515.0, 60.0))
 
 
 
@@ -514,8 +514,8 @@ def vajdahunyad(S, ctx, plan):
         return np.where(win_, win, rubble(d, a, hw))
     # the Baroque wing and its domed pavilions
     massing(S, g_["baroque"], b0, 17.0, cream_wall, slate, pitch=1.3, rmax=6.5, cornice=cream2, base=cream2, roof_top=slate)
-    for (x, y), r, h in (((5149.0, 2597.0), 5.2, 19.5), ((5185.0, 2650.5), 5.5, 19.5), ((5164.0, 2621.0), 6.5, 21.0),
-                         ((5130.0, 2650.0), 5.0, 19.5)):
+    for (x, y), r, h in (((7453.0, 2597.0), 5.2, 19.5), ((7489.0, 2650.5), 5.5, 19.5), ((7468.0, 2621.0), 6.5, 21.0),
+                         ((7434.0, 2650.0), 5.0, 19.5)):
         fd = Frame(x, y, b0, 0)
         S.add(Lathe(fd, -2, h, cyl(r), cream))
         S.add(Lathe(fd, h - 0.8, h + 0.4, cyl(r + 0.4), cream2))
@@ -539,7 +539,7 @@ def vajdahunyad(S, ctx, plan):
     cx, cy, L, Wd, ang = LM.rect_of(gj)
     fj = Frame(cx, cy, b0, ang)
     pts = np.array(gj.exterior.coords)
-    apse_east = max(pts, key=lambda p: fj.uv(*p)[0])[0] > 5182  # the round end lies east (high x)
+    apse_east = max(pts, key=lambda p: fj.uv(*p)[0])[0] > 7486  # the round end lies east (high x)
     fj = fj if apse_east else Frame(cx, cy, b0, ang + math.pi)
     S.add(Box(fj, -L / 2, L / 2 - 4.0, -Wd / 2, Wd / 2, -2, 11.5, stone))
     S.add(Roof(fj, -L / 2 + 4.0, L / 2 - 4.0, -Wd / 2 - 0.3, Wd / 2 + 0.3, 11.5, Wd * 0.55, tile))
@@ -592,7 +592,7 @@ def vajdahunyad(S, ctx, plan):
     tower("tompa", 15.0, 6.5, stone2, tile, round_=True)
     tower("nemet", 18.0, 6.0, stone, tile2)
     tower("katalin", 14.0, 6.0, stone2, tile, round_=True)
-    S.clear.append((5137.0, 2600.0, 70.0))
+    S.clear.append((7441.0, 2600.0, 70.0))
 
 
 BUILDERS = [("Museum of Fine Arts", fine_arts), ("Műcsarnok", mucsarnok), ("Vajdahunyad Castle", vajdahunyad)]

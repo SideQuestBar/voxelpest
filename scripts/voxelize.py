@@ -276,7 +276,9 @@ for oid, kind, t, g in sorted(waters, key=lambda a: -a[3].area):
         wlev[rr, cc] = np.percentile(dsm[rr, cc], 15)
     fr, fc = cells_f(g)
     gcol[fr, fc] = C["water"]
-WL = float(np.median(dsm[river])) if river.any() else 97.0
+# the Danube's level through the city: the surface model's median over the river was 98 m on the smaller maps, and
+# came out at 97 once the map reached further downstream; held at 98 so the quays, bridges and boats keep their heights
+WL = 98.0
 wlev[river] = WL
 note(f"water: Danube {river.sum() / 1e6:.2f} km2 at {WL:.2f} m; ponds {int(np.isfinite(wlev).sum() - river.sum())} cells")
 
@@ -1166,7 +1168,7 @@ if gel is not None:
 # across Lágymányos from Szent Gellért tér, FABDEM has it at 119 m from 60 m out of the square (107.5 m): a 12 m ramp.
 # The ground is lowered (never raised) to the street's level, rising gently with the distance from the square, in full
 # within 15 m of the street and fading out 60 m from it (behind the houses on either side)
-STREETS = [("Bartók Béla út", (1130.0, 3787.0), 108.3, 0.0025)]
+STREETS = [("Bartók Béla út", (3434.0, 3787.0), 108.3, 0.0025)]
 for nm_, (sx_, sy_), e0_, k_ in STREETS:
     ways_ = [ln for oid, t, ln in osm.lines if t.get("name") == nm_ and t.get("highway") and not t.get("bridge")
              and not t.get("tunnel")]
@@ -2402,7 +2404,8 @@ for key, args in {"parliament": ("Parliament", "Országház", (-1, 0.15), 520, 0
                   "music": ("House of Music", "Magyar Zene Háza", (0.6, -1), 200, 0.35),
                   "rozsak": ("Rózsák tere", "Árpád-házi Szent Erzsébet-templom", (-0.56, 0.83), 240, 0.28),
                   "jozsef": ("Szent József Church", "Szent József-templom", (-1, -0.08), 170, 0.25),
-                  "nac": ("National Athletics Centre", "Zsivotzky Gyula Nemzeti Atlétikai Központ", (0.5, -1), 520, 0.35)}.items():
+                  "nac": ("National Athletics Centre", "Zsivotzky Gyula Nemzeti Atlétikai Központ", (0.5, -1), 520, 0.35),
+                  "nepliget": ("Népliget", "Népliget", (-0.6, 1), 1250, 0.42)}.items():
     v = view(*args)
     if v:
         views[key] = v
@@ -2456,6 +2459,15 @@ if dl_ is not None and "deli" not in views:  # Déli has no name on its outline:
     cam = c_ + d_ * 300 * math.cos(0.3)
     views["deli"] = dict(label="Déli Station", pos=[round(float(cam[0]), 1), round(zc_ + 6 + 300 * math.sin(0.3), 1), round(float(cam[1]), 1)],
                          target=[round(float(c_[0]), 1), round(zc_ + 6, 1), round(float(c_[1]), 1)])
+kf_ = next((g_ for oid, k, t, g_ in osm.areas if oid == 184313287), None)
+if kf_ is not None:  # Kelenföld: the 1884 building (closed; no label of its own) and the platforms beside it, from the north-east
+    c_ = np.array(kf_.centroid.coords[0])
+    zc_ = float(g[int(c_[1]), int(c_[0])])
+    d_ = 0.75 * EAST + 0.65 * NORTH
+    d_ /= np.linalg.norm(d_)
+    cam = c_ + d_ * 420 * math.cos(0.38)
+    views["kelenfold"] = dict(label="Kelenföld Station", pos=[round(float(cam[0]), 1), round(zc_ + 4 + 420 * math.sin(0.38), 1), round(float(cam[1]), 1)],
+                              target=[round(float(c_[0]), 1), round(zc_ + 4, 1), round(float(c_[1]), 1)])
 pyl = [g_ for oid, k, t, g_ in osm.areas if oid in (197110387, 197110388)]
 if len(pyl) == 2 and "Széchenyi lánchíd" in lp:  # along the Chain Bridge from Pest: its arches, the Castle behind
     pa, pb = sorted((np.array(p_.centroid.coords[0]) for p_ in pyl), key=lambda c: c[0])
@@ -2520,7 +2532,8 @@ VIEW_HU = {"overview": "Áttekintés", "parliament": "Országház", "kossuth": "
            "gellerthotel": "Gellért Szálló és fürdő", "bme": "BME K épület", "museum": "Magyar Nemzeti Múzeum",
            "a38": "A38 hajó", "hilton": "Hilton Budapest", "erkel": "Erkel Színház", "blaha": "Blaha Lujza tér",
            "westend": "WestEnd City Center", "music": "Magyar Zene Háza", "rozsak": "Rózsák tere",
-           "jozsef": "Szent József-templom", "deli": "Déli pályaudvar", "nac": "Nemzeti Atlétikai Központ"}
+           "jozsef": "Szent József-templom", "deli": "Déli pályaudvar", "nac": "Nemzeti Atlétikai Központ",
+           "nepliget": "Népliget", "kelenfold": "Kelenföldi pályaudvar"}
 for k_, v_ in views.items():
     v_["label_hu"] = VIEW_HU.get(k_, v_["label"])
 note("views:", list(views))

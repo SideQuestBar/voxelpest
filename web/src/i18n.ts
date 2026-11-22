@@ -56,7 +56,7 @@ const en = {
   mTurn: 'Drag to turn', mMove: 'Right-drag or Shift-drag to move', mZoom: 'Scroll to zoom', mKeys: 'W A S D to fly, Q / E down and up',
   pMove: 'Left stick: move', pTurn: 'Right stick: turn', pZoom: 'Triggers: zoom · LB / RB: down, up',
   kmh: 'km/h', reset: 'Back on the road', swimming: 'in the Danube',
-  aboutHtml: `<p>Central Budapest, 5.9 × 6.5 km, in half-metre voxels, built from free data: OpenStreetMap, the Copernicus and
+  aboutHtml: `<p>Central Budapest, 8.1 × 7.6 km, in half-metre voxels, built from free data: OpenStreetMap, the Copernicus and
     FABDEM elevation models, GlobalBuildingAtlas and Urban Atlas building heights, Sentinel-2 imagery, Mapillary street
     furniture and Wikidata. Thirty-nine landmarks are modelled by hand from photos. Live weather by
     <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. The trees follow the year:
@@ -140,7 +140,7 @@ const hu: Strings = {
   mTurn: 'Húzás: forgatás', mMove: 'Jobb gombbal vagy Shifttel húzva: mozgatás', mZoom: 'Görgő: nagyítás', mKeys: 'W A S D: repülés, Q / E: le és fel',
   pMove: 'Bal kar: mozgatás', pTurn: 'Jobb kar: forgatás', pZoom: 'Ravaszok: nagyítás · LB / RB: le, fel',
   kmh: 'km/h', reset: 'Vissza az útra', swimming: 'a Dunában',
-  aboutHtml: `<p>Belső-Budapest 5,9 × 6,5 km-en, fél méteres voxelekből, szabad adatokból: OpenStreetMap, Copernicus és
+  aboutHtml: `<p>Belső-Budapest 8,1 × 7,6 km-en, fél méteres voxelekből, szabad adatokból: OpenStreetMap, Copernicus és
     FABDEM domborzat, GlobalBuildingAtlas és Urban Atlas épületmagasságok, Sentinel-2 felvételek, Mapillary utcabútorok és
     Wikidata. Harminckilenc nevezetességet kézzel modelleztünk fényképek alapján. Az élő időjárás forrása az
     <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. A fák követik az évszakokat: a

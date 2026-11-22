@@ -31,7 +31,7 @@ def sandor(S, ctx, plan):
     red-brown tiled hipped roof. The ground falls away towards the Danube, so the east side shows more storeys."""
     P = ctx["P"]
     g = keep(ctx, SANDOR)
-    a, b = (1322.3, 1830.7), (1363.2, 1842.6)
+    a, b = (3626.3, 1830.7), (3667.2, 1842.6)
     fr = edge_frame(a, b, 0)
     gx, gy = fr.ox - 6 * math.sin(fr.ang), fr.oy + 6 * math.cos(fr.ang)
     b0 = ctx["ground_m"](gx, gy)
@@ -116,10 +116,10 @@ def ch(S, ctx, plan):
     win = P("#34393b", WINDOW)
     hallr, glass = P("#c9cdcc", METAL), P("#9fb4b8", METAL)
     E = 20.5
-    pav = (1140.0, 3905.0)  # the south front's centre pavilion under its dark hipped roof
+    pav = (3444.0, 3905.0)  # the south front's centre pavilion under its dark hipped roof
 
     def wall(d, a_, hw):
-        x = (a_ - 5032.0)
+        x = (a_ - 7336.0)
         stone = (hw < 5.0)
         band = ((hw > 5.0) & (hw < 5.6)) | ((hw > 15.4) & (hw < 15.9))
         pil = np.mod(x, 7.4) < 1.0

@@ -12,12 +12,12 @@ from landmarks_city import statue
 from style import METAL
 
 PARLIAMENT, DOME = 3199085, 237397586
-FLAG = (2542.1, 1524.4)          # man_made=flagpole, height 33
-RAKOCZI = (2474.7, 1565.3)
-ANDRASSY = (2322.0, 1539.5)
-TISZA = (2589.8, 1297.1)
-KOSSUTH = (2629.7, 1404.5)
-JOZSEF_ATTILA = (2263.0, 1560.7)
+FLAG = (4846.1, 1524.4)          # man_made=flagpole, height 33
+RAKOCZI = (4778.7, 1565.3)
+ANDRASSY = (4626.0, 1539.5)
+TISZA = (4893.8, 1297.1)
+KOSSUTH = (4933.7, 1404.5)
+JOZSEF_ATTILA = (4567.0, 1560.7)
 
 NAMES = ["Kossuth tér"]
 
