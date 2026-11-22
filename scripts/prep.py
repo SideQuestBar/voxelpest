@@ -49,10 +49,11 @@ dem = dem.astype(np.float32)
 dsm = sample(dem, tr, srcs[0].crs, order=1)
 print("dsm", dsm.shape, float(dsm.min()), float(dsm.max()))
 
-with rasterio.open(glob.glob(f"{RAW}/gba/*.tif")[0]) as r:
-    g = r.read(1).astype(np.float32)
-    g[g < 0] = 0
-    gba = sample(g[None], r.transform, r.crs, order=0).astype(np.float16)
+srcs = [rasterio.open(p) for p in sorted(glob.glob(f"{RAW}/gba/*.tif"))]  # 0.2° tiles: the map spans two since 22 Nov
+g, tr = merge(srcs)
+g = g[:1].astype(np.float32)
+g[g < 0] = 0
+gba = sample(g, tr, srcs[0].crs, order=0).astype(np.float16)
 print("gba", gba.shape, float(gba.max()), "m tallest,", round(float((gba > 2).mean()) * 100, 1), "% over 2 m")
 
 out = dict(dsm=dsm, gba=gba)
