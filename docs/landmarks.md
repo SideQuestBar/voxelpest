@@ -52,7 +52,12 @@ Each solid fills, carves, paints only voxels of given colours (windows on a wall
 | WestEnd City Center | the tilted glass canopy on its steel tree over the entrance on Nyugati tér, the glazed front between granite piers and the glass wedge, the hotel and offices along Váci út, the cinema hall, the roof garden with its pond, the Millennium garden's deck and the car park with its solar panels |
 | Széchenyi Baths | the stone 1913 front with three ribbed domes, the yellow wings round the court, the three outdoor pools |
 | Museum of Ethnography | two wings dipping to the path between them and rising outwards like ramps, the roof garden, the pixel grille of folk motifs |
-| Zoo | the Great Rock, the Elephant House's Zsolnay dome and minaret, the main gate with its elephants |
+| Zoo | the Great Rock, the Palm House, the Elephant House's Zsolnay dome and minaret, the main gate with its elephants |
+| House of Music | the perforated roof on its glass ring, the gold ceiling and the columns among the trees |
+| Rózsák tere | St Elizabeth's two 76 m spires and Zsolnay roof; the Greek Catholic church's copper helm |
+| Szent József, Horváth Mihály tér | the Baroque front with two towers and helms |
+| Déli station | the 1975 hall in rust-brown steel and glass, the metro rotunda, the platform canopies |
+| National Athletics Centre | the bowl of stands, the white membrane roof and its leaning ring of columns |
 | Bálna | the glass and steel whale between two brick warehouses |
 | Ferencváros church | the 66.7 m tower with clocks, belfry and copper spire, between two stair turrets, before a brick basilica |
 | Budapest Eye | the 65 m wheel with 42 gondolas, its legs and lights |
@@ -909,9 +914,8 @@ mosaics; the Great Rock (Nagyszikla) an artificial mountain by Gyula Végh ([Hun
 
 **Drawn** (`zoo`):
 
-- **Great Rock**: a height field over OSM's outline, 33 m at most, broken by a few octaves of waves into crags and
-  gullies and stepped into 1.2 m ledges; grey concrete rock in blocks of five shades, green on the gentle ledges.
-  The Little Rock the same at 13 m.
+- **Great Rock**: now `landmarks_xl.great_rock` (below). The Little Rock: a height field over OSM's outline at 13 m,
+  broken by a few octaves of waves into crags and stepped into 1.2 m ledges, grey concrete rock, green on the ledges.
 - **Elephant House**: walls in cream and ochre bands under a red cornice, a sixteen-sided drum with arched windows
   and a Zsolnay dome (cream, teal, green, gold, blue) with a gilt finial and crescent; half domes over both ends;
   horseshoe-arched windows and portals; an octagonal minaret with a balcony and a tiled cap, 27.8 m.
@@ -1421,32 +1425,59 @@ counter's length (shortened by a metre at the mezzanine's end to leave a way beh
 Placed on OSM's outlines and the Esri aerial resampled onto the grid (`asite.py`-style overlays with 50 m ticks), detailed
 from Mapillary photos looking at each building. Grid metres throughout.
 
-- **Hősök tere.** The colonnades are arcs of one circle round (4363.6, 2379.8) at radii 46.0 and 51.8 m, from ±20.6° to
+- **Hősök tere.** The colonnades are arcs of one circle round (4875.6, 2379.8) at radii 46.0 and 51.8 m, from ±20.6° to
   ±59.8° about the axis (−2.5°). The kings stand at OSM's statue nodes, on 4.2 m pedestals; the chieftains ride on OSM's
   12.5 × 16 m plinth, which Gabriel's column stands on. Paving: 7 × 6 m rectangles along the axis, meander bands at
   |v| 6–8.5 m, 7 × 12.5 m rectangles beyond.
-- **Museum of Fine Arts** (front at (4344, 2266), 4.2°): the octastyle Corinthian portico, the Ionic side wings, the
+- **Museum of Fine Arts** (front at (4856, 2266), 4.2°): the octastyle Corinthian portico, the Ionic side wings, the
   basilica hall and two glass-roofed courts. **Műcsarnok**: red brick, a gilded pediment, the apse to the north.
 - **Vajdahunyad Castle**: the Baroque wing under slate with domed pavilions, the Gothic and Renaissance ranges, the Ják
   chapel with two west towers, and the towers by OSM's outlines (gate 27 + 10 m, apostles 25 + 14 m).
-- **Sándor Palace** (front edge (810.3, 1830.7)–(851.2, 1842.6)): the five-bay centre with a pediment dated MDCCCVI,
+- **Sándor Palace** (front edge (1322.3, 1830.7)–(1363.2, 1842.6)): the five-bay centre with a pediment dated MDCCCVI,
   the porch carrying the balcony, guards' boxes. The east side shows the storeys below the square.
-- **BME CH**: orange-red brick, a cream stone south front, a dark hipped roof over its pavilion at (628, 3905).
+- **BME CH**: orange-red brick, a cream stone south front, a dark hipped roof over its pavilion at (1140, 3905).
 - **Gellért baths' garden**: OSM maps the pools only, so the ground round them came out as bare grey paving. It now has
   terracotta paving from the wave pool to the arcade, lawns and trees in the garden past the children's pool and on
   the slope (`landmarks_more.baths_grounds`).
 - **Bartók Béla út**: FABDEM reads 119 m along it from 60 m out of Szent Gellért tér (107.5 m), which made a 12 m ramp
   off the square. voxelize.py's `STREETS` puts a point every 40 m along the street at 108.3 m, rising 0.25 m per 100 m.
 - **Corvin Cinema** (axis 46.6°): the rounded front to the passage from Corvin köz, the pale green roof, CORVIN.
-- **Corvin Plaza**: travertine with bands of glass, green roofs, the glass corner with its dots at (1907.5, 4467).
+- **Corvin Plaza**: travertine with bands of glass, green roofs, the glass corner with its dots at (2419.5, 4467).
 - **Museum of Applied Arts**: yellow brick with Zsolnay friezes, green-and-yellow glazed roofs in diamonds, the dome
-  over the entrance at (1686, 4296), the tower at (1641, 4276), five turrets. The ranges are ~15 m deep; past them
+  over the entrance at (2198, 4296), the tower at (2153, 4276), five turrets. The ranges are ~15 m deep; past them
   the court's hall under glass.
 - **Semmelweis, Üllői út 26**: the red-brick palazzo front 24 m deep, the cream range behind it.
 - **The former Slovak Lutheran church** (court behind Rákóczi út 57): the tower over the north front, a copper spire.
-  OSM's `building_passage` (2918.3, 3614.5)–(2911.6, 3633.0) is carved as a 4.6 m wide arched gateway and the court
+  OSM's `building_passage` (3430.3, 3614.5)–(3423.6, 3633.0) is carved as a 4.6 m wide arched gateway and the court
   is paved to the door.
-- **St Margaret's, Lehel tér** (west front at (3478.15, 1367.7), −17.5°): two west towers with stone pyramids to 46 m,
+- **St Margaret's, Lehel tér** (west front at (3990.15, 1367.7), −17.5°): two west towers with stone pyramids to 46 m,
   a basilica nave and aisles, a transept and an apse.
 - **Arena Mall**: a white box banded in glass, the dark cinema block 62 m from the north-west end, three elliptical
   domes at the aerial's positions. **MTK Sportpark**: a ribbed box on a lower podium, skylight stripes.
+
+## Late November 2026: the zoo, the House of Music, three churches, Déli and the athletics centre
+
+Modelled in `landmarks_xl.py` from OSM's outlines, the Esri aerial on the grid (50 m ticks) and Mapillary photos of
+each. The map grew to take in Déli (512 m west) and the athletics centre (1536 m south). Grid metres throughout.
+
+- **Great Rock** (Nagyszikla, 1912, rebuilt 2013 round the Magic Mountain): a height field over OSM's outline from
+  Gaussian peaks, the summit 34 m over the eastern lobe at (5271, 2058), a lower western ridge and a saddle; the faces
+  rise 2.6 m per metre in from the edge, broken into ledges and dark clefts, pale grey-beige concrete, shrubs on the
+  ledges.
+- **Palm House**: the glass barrel vaults of the 1912 house on OSM's outline, the central glass drum and dome at
+  (4870.5, 2049.5).
+- **House of Music** (Sou Fujimoto, 2022): the roof's underside 11.5–15.5 m with soft hills, 92 holes through it, gold
+  leaves on the ceiling, the glass ring set back 8 m under the roof's edge and 28 slim white columns.
+- **St Elizabeth's, Rózsák tere** (Imre Steindl, 1901; front (3746, 3422), apse (3737.5, 3486.5)): nave, aisles,
+  transept and apse in pale stone, two 76 m towers with pierced spires, the Zsolnay roof in its diamonds.
+- **The Greek Catholic church** beside it (frame (3790.2, 3405), 7.8°): the Baroque front and tower with a copper helm
+  to 33 m.
+- **Szent József, Horváth Mihály tér** (front (2850, 4344.7) towards (2890.6, 4375.3)): the two-towered Baroque front
+  with helms to ~43 m, a nave under a grey-green roof.
+- **Déli station** (György Kővári, 1975): the hall to 13 m on OSM's outline, glass below 7.5 m and rust-brown
+  weathering steel above, a flat roof; the metro's rotunda at (753, 929); canopies at 5 m over OSM's roof and
+  platforms A–G on columns every 9 m.
+- **National Athletics Centre** (NAPUR Architect, 2023): the bowl as a superellipse field (p = 2.4) on OSM's
+  outline, track and field from OSM, stands from the track's edge up to 17.8 m, a white membrane roof on the cable net
+  at about 31 m tilting 4 m down to the north-west, 48 radial ribs, the inclined compression truss with its two
+  chords on 48 pairs of slanted columns, the pergola-paved running loop under the open outer ring.

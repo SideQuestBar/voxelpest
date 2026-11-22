@@ -5,16 +5,17 @@ and how the code is laid out. Setup is in the [README](../README.md); publishing
 
 ## Modes and controls
 
-Three ways to see the city, switched at the top right (or with the keys 1, 2, 3):
+Four ways to see the city, switched at the top right (or with the keys 1, 2, 3, 4):
 
 | Mode | Controls |
 | --- | --- |
 | **Map** | drag to turn, right-drag (or Shift-drag) to move, scroll to zoom; W A S D or the arrows fly along the ground, Q / E down and up, Shift faster. Click a name to fly there. On a touch screen: one finger moves the map (a flick glides on), pinch zooms, twisting two fingers turns it, two fingers moving up or down tilt it; double-tap zooms in, a two-finger tap out |
 | **Walk** | click the map to look round with the mouse (Esc lets go); W A S D walk, Shift runs, Space jumps. Kerbs and stairs are climbed, walls stop you, the Danube makes you swim |
 | **Drive** | five vehicles, picked under the switches (or V, Shift+V back): a Budapest taxi, a Trabant 601, a Rendőrség (police) Škoda Octavia, a MOL Bubi bike and a BKK bus. W / S or ↑ / ↓ for gas, brake and reverse, A / D or ← / → to steer, Space to brake, Shift for more speed, R to get back on the road, L the police car's blue lights; drag the view to swing the camera round the vehicle (all the way round, and up or down), and after a moment without that it eases back behind. It follows the ground, takes kerbs, bounces off walls and drops off quay edges |
+| **Fly** | three aircraft, picked under the switches (or V, Shift+V back): an FPV drone (first person, low and quick, a Betaflight-style OSD: battery, timer, RSSI, speed, height, the way home), the "small plane" (a Cessna-like single in a magenta-and-purple JizzAir livery) and the "helicopter" (a Bell 407-like), both from behind with six instruments (airspeed, attitude, altimeter, compass, vertical speed, RPM or torque). W / S pitch, A / D roll, Q / E yaw, Space or R up (throttle, collective) and Shift or F down; T back to the last safe spot. The plane banks to turn, levels itself when let go, stalls if slow and lands on gentle ground; the drone and the helicopter lean the way they go. Anything solid is a crash, and a moment later you are back in the air |
 
 On phones, walking has a stick on the left and a look pad on the right (double-tap to jump); driving has the stick to
-steer and two pedals, and a drag anywhere else on the screen swings the camera round. The viewer fills the whole screen (under the notch and the home bar, with every control kept
+steer and two pedals (flying: the stick pitches and rolls, the pedals climb and sink), and a drag anywhere else on the screen swings the camera round. The viewer fills the whole screen (under the notch and the home bar, with every control kept
 clear of them, in portrait and landscape); added to the home screen it opens as a full-screen app. Elsewhere the
 button at the right end of the bottom bar makes the page full screen (where the browser can: iPhone Safari can't, and
 there the home-screen app is the way).
@@ -96,8 +97,9 @@ follows the browser (Hungarian if any of its languages is Hungarian), and the EN
 The URL takes `view` (overview, parliament, kossuth, castle, chainbridge, chainarch, basilica, gellert, heroes, fishermans,
 matthias, hilton, liberty, elisabeth, market, rakoczi, synagogue, statue, citadella, varosliget, szechenyi, puskas, szell,
 margaret, petofi, opera, erkel, keleti, nyugati, westend, ethnography, balna, zoo, eye, gellerthotel, bme, museum, a38, blaha,
-sidequest, sidequest_inside), `mode` (map, walk, drive), `vehicle` (taxi, trabant, police, bubi, bus: for this visit;
-the picker's choice is remembered), `date` (`MM-DD`, e.g. `10-20`, or a day of the year), `hour` (0-24) and `weather`
+music, rozsak, jozsef, deli, nac,
+sidequest, sidequest_inside), `mode` (map, walk, drive, fly), `vehicle` (taxi, trabant, police, bubi, bus: for this visit;
+the picker's choice is remembered), `aircraft` (drone, plane, heli: the same), `date` (`MM-DD`, e.g. `10-20`, or a day of the year), `hour` (0-24) and `weather`
 (clear, cloudy, rain, snow; the older `snow=1` still works), any of which starts on that date, at that hour and sky
 instead of live (the others then today, noon or clear), `live=0` (today, noon and clear rather than Budapest's time
 and weather), `lang` (en, hu), `ui=0` (or `false` / `off`: nothing over the picture, no buttons, labels, cards, speedometer, touch

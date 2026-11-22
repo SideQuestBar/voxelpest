@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Map: Sándor Palace and the BME CH building modelled.
 - Map: Corvin Cinema, Corvin Plaza, the Museum of Applied Arts, Semmelweis University, the Slovak Lutheran church,
   St Margaret's Church, Arena Mall and the MTK Sportpark modelled.
+- Map: extended 0.5 km west and 1.5 km south, taking in Déli station, more of Ferencváros and the National Athletics
+  Centre.
+- Map: the zoo's Great Rock and Palm House, the House of Music, St Elizabeth's and the Greek Catholic church on Rózsák
+  tere, Szent József on Horváth Mihály tér, Déli station and the National Athletics Centre modelled.
+- Viewer: fly mode, with an FPV drone, a small plane and a helicopter, and their OSD and instruments.
+- Viewer: the changelog, opened from the version in the About box.
 
 ### Fixed
 
@@ -22,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Docs: the new landmark modules and the two map fixes documented.
+- Map: the grid starts 512 m further west; the landmark modules' coordinates moved with it.
 
 ## [1.0.6] - 2026-11-11
 

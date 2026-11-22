@@ -1,10 +1,10 @@
 # Budapest in voxels: notes for Claude Code
 
-A 5.4 × 5.0 km voxel diorama of central Budapest at 0.5 m, from free data (OSM, Copernicus DEM, FABDEM,
+A 5.9 × 6.5 km voxel diorama of central Budapest at 0.5 m, from free data (OSM, Copernicus DEM, FABDEM,
 GlobalBuildingAtlas, Urban Atlas heights via Átló, Sentinel-2 cloudless, Mapillary map features, Wikidata), shown in
-this project's own three.js viewer (map, walk and drive modes, EN/HU, keyboard, touch and game controllers). Inspired by
+this project's own three.js viewer (map, walk, drive and fly modes, EN/HU, keyboard, touch and game controllers). Inspired by
 [warsaw-vibe-voxel](https://github.com/stared/warsaw-vibe-voxel), whose tile format it uses. Thirty-nine landmarks are
-hand-built in `scripts/landmarks.py` and the `scripts/landmarks_*.py` modules (table below; the November 2026 modules — hosok, buda, pest — are listed in `landmarks.new_modules()`, each with `NAMES`, `DROP`, `KEEP` (outline id, height: still a building to the ground model, trees and green) and `BUILDERS`). `README.md` is the
+hand-built in `scripts/landmarks.py` and the `scripts/landmarks_*.py` modules (table below; the November 2026 modules — hosok, buda, pest, xl — are listed in `landmarks.new_modules()`, each with `NAMES`, `DROP`, `KEEP` (outline id, height: still a building to the ground model, trees and green) and `BUILDERS`). `README.md` is the
 user-facing description, `docs/landmarks.md` the per-landmark dimensions and photo sources. This file is the working
 knowledge needed to pick the work up.
 
@@ -49,7 +49,7 @@ them when `web/public/data` is missing or older than the parts.
 
 | File | Role |
 | --- | --- |
-| `aoi.py` | The grid. EOV (EPSG:23700) turned THETA = 41.5° so Pest's street grid lies on voxel faces (`orient.py` measured it). W × D = 5376 × 4992 m (Széll Kálmán tér to the Puskás Aréna). `to_grid` / `to_world`. |
+| `aoi.py` | The grid. EOV (EPSG:23700) turned THETA = 41.5° so Pest's street grid lies on voxel faces (`orient.py` measured it). W × D = 5888 × 6528 m (Déli to the Puskás Aréna, Margaret Bridge to the National Athletics Centre). In November 2026 the map grew 512 m west and 1536 m south: every grid x moved +512 and the literal coordinates in the landmark modules were moved with it (a shared link's x moved too). `to_grid` / `to_world`. |
 | `fetch_*.py/.sh`, `osm_pbf.py`, `rangezip.py` | Downloads. OSM from BBBike's Budapest extract; GBA and FABDEM read by HTTP range requests out of big zips; Sentinel-2 from EOX's WMTS; Mapillary from its vector tiles. |
 | `prep.py` | DSM, FABDEM (`dtm`), GBA and Sentinel-2 (`s2`, uint8 RGB) resampled onto the 1 m grid -> `data/prep.npz`. |
 | `osm.py` | OSM JSON -> shapely geometries in grid coordinates (x = column, y = row, metres). |
@@ -70,6 +70,7 @@ them when `web/public/data` is missing or older than the parts.
 | `landmarks_hosok.py` | Hősök tere redone (`landmarks.heroes_square` calls `heroes`): the colonnades on one circle round the column, kings at OSM's statue nodes, the groups on the end piers, Gabriel's column standing on the chieftains' plinth, the paving's rectangles and meander bands; the Museum of Fine Arts, the Műcsarnok and Vajdahunyad Castle. Its `kit` is shared by the later modules: `column`, `row`, `temple_front` (a portico, +u outwards), `windows_on`, `side(fr, k)` (k quarter turns: side 1's +v runs along the old -u), `massing` (a hipped block on any outline), `keep(ctx, oid)`. |
 | `landmarks_buda.py` | The Sándor Palace (front details on `edge_frame` of OSM's front edge) and the BME CH building (one `Field`: brick wings, the cream south front, the court's hall). |
 | `landmarks_pest.py` | Corvin Cinema, Corvin Plaza, the Museum of Applied Arts, Semmelweis's Üllői út 26, the former Slovak Lutheran church with the gateway carved through Rákóczi út 57 along OSM's `building_passage` and the court paved to its door, St Margaret's at Lehel tér, Arena Mall, the MTK Sportpark hall. `block(S, g, fr, b0, top, fn)`: a `Field` over an outline with fn(d, U, V, a, hw) (d inside the outline, U/V in the frame, a = x + y for bays); `axis_frame`; `letters` (a 5 x 7 `GLYPHS` font). |
+| `landmarks_xl.py` | The late-November 2026 batch: the zoo's Great Rock (a height field of Gaussian peaks, cliffs and ledges) and Palm House, the House of Music (a Field: the perforated roof with its hills and gold underside on 28 columns over a glass ring), St Elizabeth's on Rózsák tere and the Greek Catholic church beside it, Szent József on Horváth Mihály tér, Déli station (hall, metro rotunda, platform canopies) and the National Athletics Centre (stands, membrane roof on its cable net, inclined compression truss, 48 pairs of columns). |
 | `landmarks_city.py` | The second batch (Opera, stations, baths, zoo, museum, Bálna, church, wheel, memorial) on landmarks.py's toolkit: `DROP` and `NAMES` feed `Plan`, `BUILDERS` feeds `build`. Helpers: `base_under`, `facing`, `named_near`, `grid_of`/`dist_in` (Field grids), `windows`, `statue`, `Vault` (barrel vault shell), `Gable` (arched gable wall), `rock` (artificial mountain). |
 | `landmarks_statues.py` | Runs last (it reads what the others drew in `S.prims`). `church_windows`: round-headed windows on every church and church part not already painted by a landmark (a paint prim targeting its wall id over its bbox). `statues`: every OSM statue/bust/sculpture node or small area on a pedestal, facing the nearest way (or the river), skipping facades, other levels and spots a landmark already fills (small fill prims within 3 m); `MONUMENTS` (by OSM id) are the curated ones, `gellert`, `turul`, `vorosmarty` custom builders. Both ideas from warsaw-vibe-voxel. |
 | `tiles.py` | Export. Each 256 × 256 voxel window is built once: four level-1 tiles are written, compressed downsampled copies are kept for levels 2/4/8/16 and assembled at the end. |
@@ -284,6 +285,7 @@ Full description in `minecraft/README.md`. Working knowledge:
   `__three.setHour/setDay/setWeather/setSnow` call `manual()`. `?hour=`, `?date=`, `?weather=` (or `?snow=1`) and
   `?live=0` start manual, at today / noon / clear unless given; `tools/shot.mjs` adds `live=0`.
 - `engine/world.ts`: collision queries on the finest columns (leaves and fountain jets are not solid; water is a floor).
+- `controls/fly.ts`: the aircraft (`Flyer`: the plane's thrust, drag, stall and coordinated turn; the rotorcraft in angle mode; crashes against `world.blocked`, the last safe spot, the FPV camera tilted up 20° and the chase camera); `controls/aircraft.ts` their specs and models; `ui/flyhud.ts` the picker and the HUD on a 2D canvas over the map (the OSD for the drone, the panel for the others).
 - `controls/walk.ts`: 0.6 × 1.8 m body, step 0.6 m, gravity, jump, pointer lock; `controls/drive.ts`: the vehicles
   (arcade: wheel heights → pitch/roll, 4 wheels or the bike's 2, which leans by v·ω/g instead; bumper tests across
   the leading end every ≤ 0.6 m, and points along the sides that only count if they were clear before the step, so a

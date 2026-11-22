@@ -1,6 +1,6 @@
 #!/bin/sh
 # Full data pipeline: download (cached in data/raw) -> resample onto the grid -> voxelize (+ the seasons) -> web/public/data
-# ~650 MB of downloads on the first run; then ~28 min (peak 5 GB of RAM) for the 5.4 x 5.0 km map at 0.5 m.
+# ~700 MB of downloads on the first run; then ~40 min (peak ~8 GB of RAM: give it swap) for the 5.9 x 6.5 km map at 0.5 m.
 set -e
 cd "$(dirname "$0")/.."
 export PYTHONPATH=scripts
