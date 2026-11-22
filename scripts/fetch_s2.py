@@ -34,10 +34,17 @@ def tile_of(lon, lat):
     return int(x), int(y)
 
 
-if dst.exists():
-    print("have", dst)
-    raise SystemExit
 w, s, e, n = wgs_bounds(300)
+if dst.exists():
+    with rasterio.open(dst) as f_:
+        b_ = f_.bounds
+    from pyproj import Transformer
+    tw_, ts_ = Transformer.from_crs(4326, 3857, always_xy=True).transform(w, s)
+    te_, tn_ = Transformer.from_crs(4326, 3857, always_xy=True).transform(e, n)
+    if b_.left <= tw_ and b_.bottom <= ts_ and b_.right >= te_ and b_.top >= tn_:
+        print("have", dst)
+        raise SystemExit
+    print(dst, "does not cover the map: fetching again")
 x0, y0 = tile_of(w, n)
 x1, y1 = tile_of(e, s)
 nx, ny = x1 - x0 + 1, y1 - y0 + 1

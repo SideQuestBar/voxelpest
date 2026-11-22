@@ -22,20 +22,20 @@ MALL, DECK, DECK_PARK, PARKING, GARDEN, PASSAGE = 24000485, 219155023, 496677116
 NAMES = ["WestEnd City Center"]
 DROP = {MALL, DECK, PARKING, PASSAGE}
 
-NW0 = (2941.3, 1598.3)  # the outline's corner on Váci út and Nyugati tér, which the positions below are measured from
-CANOPY = ((2937.0, 1602.0, 25.0), (2978.0, 1586.0, 23.5), (2944.0, 1626.0, 15.5))  # NW, NE, SW corners: x, y, height
-HUB = (2957.6, 1597.2, 13.6)  # the steel tree's crown
-HOTEL = [(2990, 1572), (3121, 1524), (3128, 1553), (3024, 1592), (3024, 1625), (2990, 1625)]
-OFFICE_BAR = [(3126, 1525), (3243, 1480), (3252, 1503), (3133, 1548)]
-OFFICE_WINGS = [(3136, 3164, 1570), (3186, 3212, 1562), (3240, 3264, 1552)]  # x0, x1, south end
-HALL_ARC = ((3173.3, 1496.3), 111.0)  # the cinema hall's curved wall round the roof garden: centre, radius
+NW0 = (3453.3, 1598.3)  # the outline's corner on Váci út and Nyugati tér, which the positions below are measured from
+CANOPY = ((3449.0, 1602.0, 25.0), (3490.0, 1586.0, 23.5), (3456.0, 1626.0, 15.5))  # NW, NE, SW corners: x, y, height
+HUB = (3469.6, 1597.2, 13.6)  # the steel tree's crown
+HOTEL = [(3502, 1572), (3633, 1524), (3640, 1553), (3536, 1592), (3536, 1625), (3502, 1625)]
+OFFICE_BAR = [(3638, 1525), (3755, 1480), (3764, 1503), (3645, 1548)]
+OFFICE_WINGS = [(3648, 3676, 1570), (3698, 3724, 1562), (3752, 3776, 1552)]  # x0, x1, south end
+HALL_ARC = ((3685.3, 1496.3), 111.0)  # the cinema hall's curved wall round the roof garden: centre, radius
 SKYLIGHTS = [  # glazed roofs over the malls' galleries and atria (centre, long side, short side, angle deg, rise)
-    ((3076, 1572.5), 104, 26, -20.6, 5.0), ((3145, 1575), 28, 26, -20, 5.0), ((3175, 1585), 24, 10, 23, 3.0),
-    ((3210, 1588), 37, 10.5, -10, 3.0), ((3244, 1566), 28, 8, -50, 3.0), ((3181, 1557), 26, 9, -14, 2.5),
-    ((3228, 1547), 27, 10, -13, 2.5), ((3257.3, 1546.8), 22, 8, -59, 3.0), ((3267, 1525), 22, 8, -73, 3.0)]
-OVAL = ((3207.5, 1567.0), 9.0, 4.5)  # the pond in the roof garden: centre, half-axes along x and y
-FOUNTAINS = [(3023.0, 1634.5), (3033.0, 1635.0), (3042.0, 1636.0)]  # OSM's, on the Millennium deck
-PAVILION = ((2998.5, 1648.0), 17.0)  # the round terrace (Laza Tető) on the deck
+    ((3588, 1572.5), 104, 26, -20.6, 5.0), ((3657, 1575), 28, 26, -20, 5.0), ((3687, 1585), 24, 10, 23, 3.0),
+    ((3722, 1588), 37, 10.5, -10, 3.0), ((3756, 1566), 28, 8, -50, 3.0), ((3693, 1557), 26, 9, -14, 2.5),
+    ((3740, 1547), 27, 10, -13, 2.5), ((3769.3, 1546.8), 22, 8, -59, 3.0), ((3779, 1525), 22, 8, -73, 3.0)]
+OVAL = ((3719.5, 1567.0), 9.0, 4.5)  # the pond in the roof garden: centre, half-axes along x and y
+FOUNTAINS = [(3535.0, 1634.5), (3545.0, 1635.0), (3554.0, 1636.0)]  # OSM's, on the Millennium deck
+PAVILION = ((3510.5, 1648.0), 17.0)  # the round terrace (Laza Tető) on the deck
 # across the entrance, in metres from the canopy's edge on Váci út: the left granite pier, the end of the glass front
 # and of the right pier; the glass wedge leaning on the pier from Váci út: its height, its length along the street
 PIER, GLASS_TO, PIER2_TO, WEDGE = (1.0, 3.0), 19.0, 21.0, (7.0, 22.0)
@@ -149,12 +149,12 @@ def westend(S, ctx, plan):
     office = mall.intersection(office).difference(hotel)
     ac, ar = HALL_ARC
     hall = mall.difference(Point(at(ac)).buffer(ar, 128)).intersection(
-        Polygon([at(p) for p in ((3205, 1450), (3400, 1450), (3400, 1595), (3205, 1595))]))
+        Polygon([at(p) for p in ((3717, 1450), (3912, 1450), (3912, 1595), (3717, 1595))]))
     raised = shapely.union_all([hotel, office, hall])
-    entrance = west.intersection(Polygon([at(p) for p in ((2900, 1500), (2996, 1500), (2996, 1700), (2900, 1700))]))
+    entrance = west.intersection(Polygon([at(p) for p in ((3412, 1500), (3508, 1500), (3508, 1700), (3412, 1700))]))
     nblock = entrance.intersection(Polygon([E.xy(u, v) for u, v in ((19, -30), (200, -30), (200, 6), (19, 6))]))
     entrance = entrance.difference(nblock)  # the lower block along Váci út, under the canopy's high side
-    podium = mall.difference(raised).difference(Polygon([at(p) for p in ((2900, 1500), (2996, 1500), (2996, 1700), (2900, 1700))]))
+    podium = mall.difference(raised).difference(Polygon([at(p) for p in ((3412, 1500), (3508, 1500), (3508, 1700), (3412, 1700))]))
     garden = area[GARDEN][3] if GARDEN in area else Polygon()
 
     x0f, y0f, X, Y = grid_of(mall, 2.0)
@@ -183,8 +183,8 @@ def westend(S, ctx, plan):
     gm = shapely.contains_xy(garden, X, Y) & ((zone == 1) | (zone == 2))
     surf[gm] = 1
     paths = shapely.union_all([LineString([at(OVAL[0]), at(p)]).buffer(1.8) for p in
-                               ((3150, 1560), (3160, 1610), (3195, 1612), (3240, 1600), (3262, 1556), (3214, 1552))]
-                              + [LineString([at(p) for p in ((2988, 1592), (3110, 1602), (3166, 1600))]).buffer(1.6)])
+                               ((3662, 1560), (3672, 1610), (3707, 1612), (3752, 1600), (3774, 1556), (3726, 1552))]
+                              + [LineString([at(p) for p in ((3500, 1592), (3622, 1602), (3678, 1600))]).buffer(1.6)])
     surf[gm & (shapely.contains_xy(paths, X, Y) | (shapely.contains_xy(raised.buffer(2.0), X, Y)))] = 2
     surf[gm & (dm < 6.5) & (Y > 1600 + off[1])] = 3  # the promenade along the edge over the service street
     ox, oy = at(OVAL[0])
@@ -244,7 +244,7 @@ def westend(S, ctx, plan):
     for (cx, cy), L, Wd, a, rise in SKYLIGHTS:  # "under": the half of the gallery's roof inside the hotel stays brick
         fr = Frame(*at((cx, cy)), b0 + PODIUM - 0.5, math.radians(a))
         S.add(Roof(fr, -L / 2, L / 2, -Wd / 2, Wd / 2, 0, rise + 0.5, sky_col, hip=L < 30, mode="under"))
-    nx_, ny_ = at((2991, 1598))
+    nx_, ny_ = at((3503, 1598))
     S.add(Lathe(Frame(nx_, ny_, be + ENTRANCE_H - 0.5), 0, 4.5, cone(5.0, 3.6), lambda u, v, w: np.where(
         np.mod(np.arctan2(v, u) * 8 / math.pi, 1) < 0.2, rib, glass_dark).astype(np.uint16)))
     # trees in the roof garden: on the lawn, a hash of the place deciding
@@ -380,9 +380,9 @@ def westend(S, ctx, plan):
     dsurf = np.zeros(DX.shape, np.uint8)  # 0 lawn, 1 path, 2 the terrace, 3 its pattern, 4 water
     pc, pr = at(PAVILION[0]), PAVILION[1]
     rr = np.hypot(DX - pc[0], DY - pc[1])
-    walk = shapely.union_all([LineString([at(p) for p in ((2975, 1652), (3150, 1660))]).buffer(1.8),
-                              LineString([at(p) for p in ((3020, 1618), (3020, 1676))]).buffer(1.5),
-                              LineString([at(p) for p in ((3085, 1631), (3085, 1678))]).buffer(1.5)])
+    walk = shapely.union_all([LineString([at(p) for p in ((3487, 1652), (3662, 1660))]).buffer(1.8),
+                              LineString([at(p) for p in ((3532, 1618), (3532, 1676))]).buffer(1.5),
+                              LineString([at(p) for p in ((3597, 1631), (3597, 1678))]).buffer(1.5)])
     dsurf[shapely.contains_xy(walk, DX, DY)] = 1
     dsurf[rr < pr] = 2
     dia = np.abs(DX - pc[0]) + np.abs(DY - pc[1])
@@ -421,26 +421,26 @@ def westend(S, ctx, plan):
             S.add(Box(fp.at(r_ * math.cos(a), r_ * math.sin(a)), -0.2, 0.2, -0.2, 0.2, 0, 3.3, steel))
     for x_, y_ in fx:
         S.add(Lathe(Frame(x_, y_, b0 + DECK_H - 0.3), 0, 1.6, cone(0.35, 0.1), P("#e9f1f2", WATER)))
-    pg = Frame(*at((3006, 1630)), b0 + DECK_H, 0)
+    pg = Frame(*at((3518, 1630)), b0 + DECK_H, 0)
     S.add(Box(pg, -1.2, 1.2, -1.2, 1.2, 0, 2.6, P("#d8b040")))
     S.add(Roof(pg, -1.5, 1.5, -1.5, 1.5, 2.6, 1.2, P("#c98a2e"), hip=True))
     S.add(Box(pg, 1.2, 4.0, -0.6, 0.6, 0, 1.4, P("#7d4f8a")))
-    kf = Frame(*at((3118, 1649)), b0 + DECK_H, 0)
+    kf = Frame(*at((3630, 1649)), b0 + DECK_H, 0)
     S.add(Box(kf, -13.0, 13.0, -5.0, 5.0, 0, 3.4, white))
     S.add(Box(kf, -13.3, 13.3, -5.3, 5.3, 3.4, 3.8, P("#8d8f92")))
     S.add(Box(kf, -12.0, 12.0, -5.2, 5.2, 0.4, 2.8, win, mode="paint", targets=[white]))
     for row, y_ in enumerate((1635.0, 1643.5)):
-        for x_ in np.arange(3024.0 + row * 3.5, 3152.0, 7.0):
-            if abs(x_ - 3085) < 2.5 or abs(x_ - 3118) < 15 and y_ > 1640:
+        for x_ in np.arange(3536.0 + row * 3.5, 3664.0, 7.0):
+            if abs(x_ - 3597) < 2.5 or abs(x_ - 3630) < 15 and y_ > 1640:
                 continue
             hsh = stable_hash("deck", int(x_), int(y_))
             tree(S, *at((x_, y_)), b0 + DECK_H, 6.0 + hsh % 3, 3.0 + (hsh % 5) * 0.15, leaves, trunk)
-    for x_, y_ in ((2976, 1634), (2975, 1664), (2981, 1674), (3045, 1668), (3060, 1672), (3140, 1670), (3100, 1672)):
+    for x_, y_ in ((3488, 1634), (3487, 1664), (3493, 1674), (3557, 1668), (3572, 1672), (3652, 1670), (3612, 1672)):
         hsh = stable_hash("deck2", x_, y_)
         tree(S, *at((x_, y_)), b0 + DECK_H, 5.5 + hsh % 3, 2.8 + (hsh % 4) * 0.2, leaves, trunk)
 
     # ------------------------------------------------------------------ the car park: three decks, the solar roof
-    drum_c, drum_r = at((3332.5, 1650.5)), 13.0
+    drum_c, drum_r = at((3844.5, 1650.5)), 13.0
     pk = park.difference(Point(drum_c).buffer(drum_r + 0.3, 64))
     px0, py0, PX, PY = grid_of(park, 1.5)
     dp = dist_in(pk, PX, PY)

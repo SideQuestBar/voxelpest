@@ -23,7 +23,10 @@ Z = 14
 out = Path("data/raw/mapillary")
 dst = out / "features.json"
 tok = os.environ.get("MAPILLARY_TOKEN")
-if dst.exists():
+box = out / "features.bbox.json"  # the (w, s, e, n) fetched, so a bigger map fetches again
+if dst.exists() and box.exists() and all(
+        a <= b for a, b in zip(json.loads(box.read_text())[:2], wgs_bounds(100)[:2])) and all(
+        a >= b for a, b in zip(json.loads(box.read_text())[2:], wgs_bounds(100)[2:])):
     print("have", dst)
     raise SystemExit
 if not tok:
@@ -75,4 +78,5 @@ for layer in LAYERS:
                         feats.append([round(lon, 7), round(lat, 7), p.get("value"), p.get("first_seen_at"), p.get("last_seen_at")])
             print(layer, tx, ty, len(feats), flush=True)
 json.dump(feats, open(dst, "w"))
+box.write_text(json.dumps([w, s, e, n]))
 print("got", dst, len(feats), "features")

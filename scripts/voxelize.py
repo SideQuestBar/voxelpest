@@ -1165,7 +1165,7 @@ if gel is not None:
 # across Lágymányos from Szent Gellért tér, FABDEM has it at 119 m from 60 m out of the square (107.5 m): a 12 m ramp.
 # The ground is lowered (never raised) to the street's level, rising gently with the distance from the square, in full
 # within 15 m of the street and fading out 60 m from it (behind the houses on either side)
-STREETS = [("Bartók Béla út", (618.0, 3787.0), 108.3, 0.0025)]
+STREETS = [("Bartók Béla út", (1130.0, 3787.0), 108.3, 0.0025)]
 for nm_, (sx_, sy_), e0_, k_ in STREETS:
     ways_ = [ln for oid, t, ln in osm.lines if t.get("name") == nm_ and t.get("highway") and not t.get("bridge")
              and not t.get("tunnel")]

@@ -286,10 +286,10 @@ def gellert(S, ctx, plan):
 
 # the open-air baths up the hill behind the Gellért, placed from aerial photos (grid metres): the sun terrace's arc
 # round the half-moon garden, open towards the baths, and the stepped curve at the wave pool's far end
-GARDEN_C, GARDEN_R, ARC_R = (548.5, 3665.5), 14.0, (18.5, 27.0)
+GARDEN_C, GARDEN_R, ARC_R = (1060.5, 3665.5), 14.0, (18.5, 27.0)
 ARC_FROM, ARC_TO = math.radians(70), math.radians(270)
-STEPS_C, STEPS_R = (501.0, 3631.5), (8.0, 12.0)
-KIDS_POOL = ((505.0, 3654.0), 3.2)
+STEPS_C, STEPS_R = (1013.0, 3631.5), (8.0, 12.0)
+KIDS_POOL = ((1017.0, 3654.0), 3.2)
 
 
 def gellert_garden(S, ctx, hotel, wave, rim, water):
@@ -353,13 +353,13 @@ def gellert_garden(S, ctx, hotel, wave, rim, water):
 
 # the baths' garden round the pools (aerial): terracotta paving from the wave pool to the arcade, lawns under trees in
 # the garden past the children's pool and on the slope north-west of the wave pool; unmapped, it was bare grey paving
-BATH_PAVED = [(482.0, 3622.0), (505.0, 3612.0), (530.0, 3606.0), (546.0, 3612.0), (545.0, 3642.0), (535.0, 3660.0),
-              (528.0, 3680.0), (505.0, 3668.0), (486.0, 3648.0)]
-BATH_LAWNS = [[(543.0, 3606.0), (572.0, 3612.0), (570.0, 3640.0), (548.0, 3642.0), (544.0, 3625.0)],
-              [(472.0, 3608.0), (500.0, 3606.0), (494.0, 3622.0), (484.0, 3633.0), (470.0, 3626.0)],
-              [(484.0, 3650.0), (500.0, 3664.0), (512.0, 3684.0), (496.0, 3690.0), (476.0, 3662.0)]]
-BATH_TREES = [(550.0, 3612.0), (561.0, 3616.0), (566.0, 3628.0), (553.0, 3633.0), (478.0, 3615.0), (487.0, 3610.0),
-              (480.0, 3626.0), (490.0, 3664.0), (500.0, 3676.0), (486.0, 3672.0)]
+BATH_PAVED = [(994.0, 3622.0), (1017.0, 3612.0), (1042.0, 3606.0), (1058.0, 3612.0), (1057.0, 3642.0), (1047.0, 3660.0),
+              (1040.0, 3680.0), (1017.0, 3668.0), (998.0, 3648.0)]
+BATH_LAWNS = [[(1055.0, 3606.0), (1084.0, 3612.0), (1082.0, 3640.0), (1060.0, 3642.0), (1056.0, 3625.0)],
+              [(984.0, 3608.0), (1012.0, 3606.0), (1006.0, 3622.0), (996.0, 3633.0), (982.0, 3626.0)],
+              [(996.0, 3650.0), (1012.0, 3664.0), (1024.0, 3684.0), (1008.0, 3690.0), (988.0, 3662.0)]]
+BATH_TREES = [(1062.0, 3612.0), (1073.0, 3616.0), (1078.0, 3628.0), (1065.0, 3633.0), (990.0, 3615.0), (999.0, 3610.0),
+              (992.0, 3626.0), (1002.0, 3664.0), (1012.0, 3676.0), (998.0, 3672.0)]
 
 
 def baths_grounds(S, ctx, terra, leaf):
