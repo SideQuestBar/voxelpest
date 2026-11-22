@@ -454,13 +454,22 @@ class Plan:
         self.drop = {str(i) for i in drop}
 
 
+def skip_ways():
+    """the ways the modules build themselves (the A38's gangways): no road or deck of their own"""
+    return {i for m in new_modules() for i in getattr(m, "SKIP_WAYS", ())}
+
+
 def new_modules():
     """the modules of Nov 2026's second round (NAMES, DROP, KEEP, BUILDERS each)"""
     import landmarks_buda
     import landmarks_hosok
     import landmarks_pest
+    import landmarks_ferenc
+    import landmarks_ujbuda
+    import landmarks_vizivaros
     import landmarks_xl
-    return [landmarks_hosok, landmarks_buda, landmarks_pest, landmarks_xl]
+    return [landmarks_hosok, landmarks_buda, landmarks_pest, landmarks_xl, landmarks_ferenc, landmarks_ujbuda,
+            landmarks_vizivaros]
 
 
 # ------------------------------------------------------------------------------------------------ build

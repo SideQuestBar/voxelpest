@@ -335,10 +335,11 @@ def area_surface(ln):
 
 
 n_inherit = 0
+SKIP_WAYS = landmarks.skip_ways()
 road_lines = []  # (osm id, centreline, its colour): checked against the finished ground below
 for oid, t, ln in osm.lines:
     hw = t.get("highway")
-    if hw not in HW or t.get("area") == "yes" or underground(t):
+    if hw not in HW or t.get("area") == "yes" or underground(t) or oid in SKIP_WAYS:
         continue
     if on_bridge(t):
         bridge_ways.append((oid, t, ln))
@@ -2005,7 +2006,8 @@ for fs, base_ in ((outlines, base_o), (parts, base_p)):
     for i, f in enumerate(fs):
         f["base"] = float(base_[i + 1])  # metres above the model base
 LMS = landmarks.build(dict(F=F, BASE=BASE, WL=WL, G=G, gfine_at=gfine_at, feats=feat_by_id, osm=osm, pal=pal, C=C,
-                           W=W, D=D, note=note, lamp_post=lamp_post, plan=LMK, theta=THETA, river=river, road=road))
+                           W=W, D=D, note=note, lamp_post=lamp_post, plan=LMK, theta=THETA, river=river, road=road,
+                           deck_top=lambda x, y: float(dzf[int(y), int(x)]) if dzf[int(y), int(x)] > 0 else None))
 PVa = np.array(PV + LMS.points, np.int32).reshape(-1, 4)
 pv_bin = defaultdict(list)
 for k, (x, y, z, p) in enumerate(PVa):
@@ -2405,10 +2407,33 @@ for key, args in {"parliament": ("Parliament", "Országház", (-1, 0.15), 520, 0
                   "rozsak": ("Rózsák tere", "Árpád-házi Szent Erzsébet-templom", (-0.56, 0.83), 240, 0.28),
                   "jozsef": ("Szent József Church", "Szent József-templom", (-1, -0.08), 170, 0.25),
                   "nac": ("National Athletics Centre", "Zsivotzky Gyula Nemzeti Atlétikai Központ", (0.5, -1), 520, 0.35),
-                  "nepliget": ("Népliget", "Népliget", (-0.6, 1), 1250, 0.42)}.items():
+                  "nepliget": ("Népliget", "Népliget", (-0.6, 1), 1250, 0.42),
+                  "groupama": ("Groupama Aréna", "Groupama Aréna", (-0.7, 0.7), 330, 0.35),
+                  "mvmdome": ("MVM Dome", "MVM Dome", (-0.3, -1), 260, 0.3),
+                  "mol": ("MOL Campus", "MOL Campus", (-0.9, 0.4), 420, 0.22),
+                  "mupa": ("Müpa", "Művészetek Palotája", (0.3, 1), 280, 0.25),
+                  "ludovika": ("Ludovika Arena", "Ludovika Aréna", (-1, 0.5), 200, 0.3),
+                  "budapestpark": ("Budapest Park", "Budapest Park", (-0.4, 1), 230, 0.4),
+                  "allee": ("Allee", "Allee", (0.3, 1), 240, 0.3),
+                  "mompark": ("MOM Park", "MOM Park", (1, 0.6), 230, 0.3),
+                  "kfpower": ("Kelenföld Power Station", "Kelenföldi Erőmű", (1, -0.2), 380, 0.3),
+                  "bikas": ("Bikás Park", "Bikás park", (0.5, -1), 330, 0.45),
+                  "bmecampus": ("BME Campus", "Budapesti Műszaki és Gazdaságtudományi Egyetem", (1, 0.3), 620, 0.35),
+                  "margitgimi": ("Szent Margit Gimnázium", "Szent Margit Gimnázium", (-0.2, 1), 180, 0.22)}.items():
     v = view(*args)
     if v:
         views[key] = v
+for key, label, tx, ty, dirs, dist, el in (  # places with no label of their own to aim at
+        ("etele", "Etele Plaza", 411.0, 3975.0, (-0.6, 1), 260, 0.3),
+        ("batthyany", "Batthyány tér", 4240.0, 1180.0, (1, 0.2), 230, 0.3),
+        ("szilagyi", "Szilágyi Dezső tér Church", 4142.0, 1367.0, (1, 0.5), 170, 0.28),
+        ("teresa", "St Teresa of Avila", 5362.0, 2683.0, (-1, 0.3), 150, 0.3)):
+    zc_ = float(g[int(ty), int(tx)])
+    d_ = dirs[0] * EAST + dirs[1] * NORTH
+    d_ /= np.linalg.norm(d_)
+    cam = np.array([tx, ty]) + d_ * dist * math.cos(el)
+    views[key] = dict(label=label, pos=[round(float(cam[0]), 1), round(zc_ + 10 + dist * math.sin(el), 1), round(float(cam[1]), 1)],
+                      target=[tx, round(zc_ + 10, 1), ty])
 nep = next((g_ for oid, k, t, g_ in osm.areas if oid == 13957874), None)
 if nep is not None and "ethnography" in views:  # two wings: aim between them, at the gate they frame
     c_ = np.array(nep.centroid.coords[0])
@@ -2533,7 +2558,12 @@ VIEW_HU = {"overview": "Áttekintés", "parliament": "Országház", "kossuth": "
            "a38": "A38 hajó", "hilton": "Hilton Budapest", "erkel": "Erkel Színház", "blaha": "Blaha Lujza tér",
            "westend": "WestEnd City Center", "music": "Magyar Zene Háza", "rozsak": "Rózsák tere",
            "jozsef": "Szent József-templom", "deli": "Déli pályaudvar", "nac": "Nemzeti Atlétikai Központ",
-           "nepliget": "Népliget", "kelenfold": "Kelenföldi pályaudvar"}
+           "nepliget": "Népliget", "kelenfold": "Kelenföldi pályaudvar", "groupama": "Groupama Aréna",
+           "mvmdome": "MVM Dome", "mol": "MOL Campus", "mupa": "Müpa", "ludovika": "Ludovika Aréna",
+           "budapestpark": "Budapest Park", "allee": "Allee", "mompark": "MOM Park", "kfpower": "Kelenföldi Erőmű",
+           "bikas": "Bikás park", "bmecampus": "BME campus", "margitgimi": "Szent Margit Gimnázium",
+           "etele": "Etele Plaza", "batthyany": "Batthyány tér", "szilagyi": "Szilágyi Dezső téri templom",
+           "teresa": "Avilai Szent Teréz-templom"}
 for k_, v_ in views.items():
     v_["label_hu"] = VIEW_HU.get(k_, v_["label"])
 note("views:", list(views))
