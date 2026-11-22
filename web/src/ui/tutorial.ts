@@ -8,8 +8,8 @@ import { h, isTouch, storage } from '../util';
 import { desktop } from './desktop';
 
 const KEY = 'voxelpest-tutorial';
-export type HelpTab = 'map' | 'walk' | 'drive';
-const TABS: HelpTab[] = ['map', 'walk', 'drive'];
+export type HelpTab = 'map' | 'walk' | 'drive' | 'fly';
+const TABS: HelpTab[] = ['map', 'walk', 'drive', 'fly'];
 const INK = '#1d2328';
 
 // a patch of the city seen from above, larger than its tile so it can slide, turn and zoom without showing an edge
@@ -101,12 +101,18 @@ function tiles(kind: 'touch' | 'mouse' | 'pad'): Tile[] {
 
 // a mode's controls as rows of [what to press, what it does]: keycaps (the WASD and arrow clusters as on a keyboard),
 // a controller's buttons in their colours, sticks and triggers as pills, touch gestures as words
-function controls(kind: 'touch' | 'mouse' | 'pad', mode: 'walk' | 'drive'): [string, string][] {
+function controls(kind: 'touch' | 'mouse' | 'pad', mode: 'walk' | 'drive' | 'fly'): [string, string][] {
   const a = T().act;
   const k = (s: string, cls = '') => `<kbd class="${cls}">${s}</kbd>`;
   const cluster = (up: string, l: string, d: string, r: string) => `<span class="kc"><i></i>${k(up)}<i></i>${k(l)}${k(d)}${k(r)}</span>`;
   const or = `<em>${a.or}</em>`;
   const btn = (b: 'A' | 'B' | 'X' | 'Y') => `<kbd class="pb pb-${b}">${b}</kbd>`, pill = (s: string) => k(s, 'pill'), word = (s: string) => k(s, 'word');
+  if (mode === 'fly') {
+    if (kind === 'mouse') return [[cluster('W', 'A', 'S', 'D'), a.pitchRoll], [`${k('Q')}${k('E')}`, a.yawFly], [`${k('Space', 'wide')}${k('Shift', 'wide')}${or}${k('R')}${k('F')}`, a.upDown],
+      [k('V'), a.nextAir], [k('T'), a.again]];
+    if (kind === 'pad') return [[pill('LS'), a.pitchRoll], [pill('RS'), a.yawFly], [`${pill('RT')}${pill('LT')}`, a.upDown], [`${pill('LB')}${pill('RB')}`, a.nextAirPad], [btn('Y'), a.again]];
+    return [[word(a.stick), a.pitchRoll], [word(a.pedals), a.climb]];
+  }
   if (kind === 'mouse') return mode === 'walk'
     ? [[cluster('W', 'A', 'S', 'D'), a.walk], [word(a.mouse), a.look], [k('Shift', 'wide'), a.run], [k('Space', 'wide'), a.jump], [k('Esc'), a.free]]
     : [[`${k('W')}${k('S')}${or}${k('↑')}${k('↓')}`, a.gasBrake], [`${k('A')}${k('D')}${or}${k('←')}${k('→')}`, a.steer], [k('Space', 'wide'), a.hand],
@@ -134,7 +140,7 @@ export class Tutorial {
   private tab: HelpTab = 'map';
 
   // the first time on foot or in a vehicle: that tab, once
-  first(tab: 'walk' | 'drive') {
+  first(tab: 'walk' | 'drive' | 'fly') {
     const q = new URLSearchParams(location.search).get('tutorial'), k = `${KEY}-${tab}`;
     if (q === '0' || storage(k) === '1') return;
     storage(k, '1');
@@ -179,8 +185,8 @@ export class Tutorial {
   private render() {
     const t = T(), touch = isTouch(), kind = this.pad() ? 'pad' : touch ? 'touch' : 'mouse';
     this.dlg.dataset.kind = kind;
-    const tab = this.tab, names = { map: t.tutTabMap, walk: t.tutTabWalk, drive: t.tutTabDrive };
-    const list = (m: 'walk' | 'drive') => `<ul class="tut-list">${controls(kind, m).map(([keys, what]) => `<li><span class="keys">${keys}</span><span>${what}</span></li>`).join('')}</ul>`;
+    const tab = this.tab, names = { map: t.tutTabMap, walk: t.tutTabWalk, drive: t.tutTabDrive, fly: t.tutTabFly };
+    const list = (m: 'walk' | 'drive' | 'fly') => `<ul class="tut-list">${controls(kind, m).map(([keys, what]) => `<li><span class="keys">${keys}</span><span>${what}</span></li>`).join('')}</ul>`;
     // the controller's View button (its Menu button has a tile); Esc opens the desktop app's menu
     const more = kind === 'pad' ? t.tutPad : t.tutMore(touch) + (desktop && !touch ? ` · ${t.escMenu}` : '');
     this.dlg.innerHTML = `<div class="tut">

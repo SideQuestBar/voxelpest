@@ -1,4 +1,4 @@
-// The page round the map: the mode switch (map, walk, drive), the language switch, the places menu with its search,
+// The page round the map: the mode switch (map, walk, drive, fly), the language switch, the places menu with its search,
 // the time of day and the weather (ui/time.ts), names, the help line for the current mode, the tiles still loading, the
 // speedometer, the about box.
 import { changelogHtml } from './changelog';
@@ -9,7 +9,7 @@ import type { Meta, View } from '../meta';
 import { $, esc, isTouch } from '../util';
 import { TimeCard } from './time';
 
-export type Mode = 'map' | 'walk' | 'drive';
+export type Mode = 'map' | 'walk' | 'drive' | 'fly';
 
 const viewOf = (views: [string, View][], k: string) => views.find(([key]) => key === k)![1];
 

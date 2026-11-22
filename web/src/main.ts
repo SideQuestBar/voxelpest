@@ -8,6 +8,7 @@ import { keepAlive, startLite } from './recover';
 import { initPwa } from './pwa';
 import { initOffline } from './offline';
 import { Car } from './controls/drive';
+import { Flyer } from './controls/fly';
 import { lampLit } from './controls/kit';
 import { MapControls } from './controls/orbit';
 import { Walker } from './controls/walk';
@@ -32,6 +33,7 @@ import { Promo } from './ui/promo';
 import { Stats } from './ui/stats';
 import { clock } from './ui/time';
 import { Tutorial } from './ui/tutorial';
+import { FlyHud } from './ui/flyhud';
 import { Ui, type Mode } from './ui/ui';
 import { VehiclePicker } from './ui/vehicles';
 import { $, clamp, isTouch } from './util';
@@ -113,6 +115,9 @@ map.floor = (x, z) => world.groundAt(x, z) ?? 8;
 map.bounds = [-400, -400, meta.W * meta.vox + 400, meta.D * meta.vox + 400];
 const walker = new Walker(camera, world, input, renderer.domElement);
 const car = new Car(scene, camera, world, input, renderer.domElement, weather.levels);
+const flyer = new Flyer(scene, camera, world, input);
+flyer.north = meta.theta_deg * Math.PI / 180;
+flyer.bounds = [-400, -400, meta.W * meta.vox + 400, meta.D * meta.vox + 400];
 
 // ---------------------------------------------------------------- state
 let mode: Mode = 'map';
@@ -227,6 +232,7 @@ const locate = new Locate(meta, scene, {
   toast: (t) => ui.toast(t),
 });
 const vehicles = new VehiclePicker(car, input, (text) => ui.toast(text));
+const flyHud = new FlyHud(flyer, input, (text) => ui.toast(text));
 
 // ---------------------------------------------------------------- places
 // a spot at street level in front of what a camera looks at: part of the way back towards the camera
@@ -325,6 +331,7 @@ function roadHeading(x: number, z: number, wish: number) {
 function here() {
   if (mode === 'walk') return { x: walker.feet.x, z: walker.feet.z, heading: walker.yaw };
   if (mode === 'drive') return { x: car.pos.x, z: car.pos.z, heading: car.heading };
+  if (mode === 'fly') return { x: flyer.pos.x, z: flyer.pos.z, heading: flyer.heading() };
   return before(camera.position, map.ctl.target);
 }
 
@@ -349,6 +356,7 @@ async function setMode(m: Mode, at?: At) {
   const p = at ?? here(), from = mode;
   const was = mode === 'walk' ? walker.feet.y : mode === 'drive' ? car.pos.y : null;
   try {
+    if (m !== 'fly') { flyer.show(false, 0); flyHud.show(false); }
     if (m === 'map') {
       ui.hint(null);
       walker.unlock();
@@ -361,6 +369,19 @@ async function setMode(m: Mode, at?: At) {
       map.enabled = true;
       map.jump([p.x - Math.cos(p.heading) * 60, y + 45, p.z - Math.sin(p.heading) * 60], [p.x, y, p.z]);
       map.flyTo([p.x - Math.cos(p.heading) * 260, y + 190, p.z - Math.sin(p.heading) * 260], [p.x, y, p.z], 1400);
+    } else if (m === 'fly') {
+      // airborne over where you were (from the map, over what it looks at), flying the way you looked
+      ui.hint(T().loading);
+      tiles.setFocus(p.x, p.z, 140);
+      await groundLoaded(p.x, p.z, 60);
+      ui.hint(null);
+      map.enabled = false;
+      walker.unlock();
+      car.show(false, 0);
+      mode = 'fly';
+      flyer.place(p.x, world.groundAt(p.x, p.z) ?? 0, p.z, p.heading);
+      flyer.show(true, sky.night);
+      flyHud.show(true);
     } else {
       ui.hint(T().loading);
       tiles.setFocus(p.x, p.z, 90);
@@ -457,7 +478,7 @@ input.onPad = (on) => {
 
 // the controller's buttons that work in every mode: View cycles the modes, Menu opens the menu (places, time and
 // weather, the bar, help), which then has the controller to itself for the frame
-const MODES: Mode[] = ['map', 'walk', 'drive'];
+const MODES: Mode[] = ['map', 'walk', 'drive', 'fly'];
 const cursor = padCursor();
 function padButtons() {
   if (!input.pad.on) return;
@@ -473,7 +494,7 @@ function padButtons() {
     input.mute();
     return;
   }
-  if (input.pressed(PAD.VIEW)) void setMode(MODES[(MODES.indexOf(mode) + 1) % 3]);
+  if (input.pressed(PAD.VIEW)) void setMode(MODES[(MODES.indexOf(mode) + 1) % MODES.length]);
   if (input.pressed(PAD.MENU)) menu.show();
 }
 addEventListener('keydown', (e) => {
@@ -481,6 +502,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'Digit1') void setMode('map');
   if (e.code === 'Digit2') void setMode('walk');
   if (e.code === 'Digit3') void setMode('drive');
+  if (e.code === 'Digit4') void setMode('fly');
 });
 function fit() {
   const w = app.clientWidth, h = app.clientHeight;
@@ -519,6 +541,13 @@ function frame(now: number) {
     tiles.setFocus(walker.feet.x, walker.feet.z, 70);
     focus = walker.feet;
     radius = 90;
+  } else if (mode === 'fly') {
+    flyer.update(dt);
+    flyHud.poll();
+    flyer.show(true, sky.night);
+    tiles.setFocus(flyer.pos.x, flyer.pos.z, 140);
+    focus = flyer.pos;
+    radius = 160;
   } else {
     car.update(dt);
     rescue();
@@ -543,6 +572,7 @@ function frame(now: number) {
   if (shown) ui.tiles(tiles.loading, tiles.meshed);
   else loader?.progress(0.2 + 0.8 * (tiles.meshed / Math.max(tiles.meshed + tiles.loading, 1)), T().loadingCity(tiles.meshed, tiles.meshed + tiles.loading));
   renderer.render(scene, camera);
+  if (mode === 'fly') flyHud.draw();
   stats?.frame(now, renderer.info, tiles, ` · lite ${lite.level}` + (lite.crashed ? `\nlast start died after ${lite.crashed.secs} s: ${lite.crashed.mode}, ${lite.crashed.mb} MB` : ''));
   if (!shown && tiles.shown > 0 && tiles.loading < 4) {
     shown = true;
@@ -559,7 +589,7 @@ function frame(now: number) {
     track('start', { lang: lang(), input: isTouch() ? 'touch' : 'mouse', app: !!desktop, mode });
     onLang((l) => track('lang', { lang: l }));
     const m = qs.get('mode'), v = meta.views[qs.get('view') ?? ''];
-    const walking = m === 'walk' || m === 'drive';
+    const walking = m === 'walk' || m === 'drive' || m === 'fly';
     if (walking) void setMode(m, v ? towards(v) : undefined);
     const then = () => { if (!walking && !document.body.classList.contains('noui')) tutorial.auto(); };
     if (loader) loader.done(then);
@@ -569,7 +599,7 @@ function frame(now: number) {
 renderer.setAnimationLoop(frame);
 
 window.__three = {
-  renderer, scene, camera, tiles, world, sky, car, walker, vehicles,
+  renderer, scene, camera, tiles, world, sky, car, walker, vehicles, flyer, flyHud,
   lod: { get loading() { return tiles.loading; }, get shown() { return tiles.shown; }, update: () => tiles.update(camera, vh, true) },
   render: () => renderer.render(scene, camera),
   setMode, goBar, frame, map, tutorial, menu, streetSpot, groundLoaded,

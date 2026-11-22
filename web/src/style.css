@@ -207,7 +207,9 @@ body.tiles-loading #status .blocks i { animation: tb-hop .9s ease-in-out infinit
 #crosshair { display: none; position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
   background: rgba(255,255,255,.85); box-shadow: 0 0 2px rgba(0,0,0,.6); pointer-events: none; z-index: 3; }
 body[data-mode="walk"] #crosshair { display: block; }
-body[data-mode="walk"] #promo, body[data-mode="drive"] #promo { opacity: .85; }
+body[data-mode="walk"] #promo, body[data-mode="drive"] #promo, body[data-mode="fly"] #promo { opacity: .85; }
+/* flying: the instruments take the bottom of the screen */
+body[data-mode="fly"] #promo { display: none; }
 
 #fps { position: fixed; z-index: 6; right: calc(var(--gx) + var(--sar)); top: calc(54px + var(--sat)); padding: 4px 8px; border-radius: 7px;
   background: rgba(20, 24, 28, .74); color: #e9efe6; font: 11px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre;
@@ -220,8 +222,8 @@ body[data-mode="walk"] #promo, body[data-mode="drive"] #promo { opacity: .85; }
   background: rgba(255,255,255,.65); }
 #touch .look { position: absolute; right: 0; top: calc(80px + var(--sat)); bottom: calc(120px + var(--sab)); width: 55%; pointer-events: auto; }
 #touch .pedals { display: none; position: absolute; right: calc(22px + var(--sar)); bottom: calc(140px + var(--sab)); gap: 12px; pointer-events: auto; }
-#touch[data-mode="drive"] .pedals { display: flex; }
-#touch[data-mode="drive"] .look { display: none; }
+#touch[data-mode="drive"] .pedals, #touch[data-mode="fly"] .pedals { display: flex; }
+#touch[data-mode="drive"] .look, #touch[data-mode="fly"] .look { display: none; }
 #touch .pedals button { width: 72px; height: 96px; border-radius: 14px; border: 2px solid rgba(255,255,255,.6); font-size: 22px;
   background: rgba(30, 34, 38, .45); color: #fff; }
 #touch .pedals .gas { height: 120px; }
@@ -563,23 +565,25 @@ body:not([data-mode="map"]) #locate, body:not([data-mode="map"]) #me-pin { displ
 @media (prefers-reduced-motion: reduce) { #me-pin::after, #locate.busy svg { animation: none; } }
 /* drive mode: the vehicle picker under the switches (the chosen one shows its name), the police lights at its end */
 #vehicles { display: none; position: fixed; z-index: 4; right: calc(var(--gx) + var(--sar)); top: calc(54px + var(--sat)); }
-body[data-mode="drive"] #vehicles { display: flex; }
-body.noui #vehicles, body.noui #touch, body.noui #hint, body.noui #toast, body.noui #fps, body.noui #tilebar { display: none !important; }
-#vehicles button { padding: 5px 9px; }
-#vehicles button svg { width: 16px; height: 16px; flex: none; }
-#vehicles button span { display: none; white-space: nowrap; }
-#vehicles button[aria-pressed="true"] span { display: inline; }
+body[data-mode="drive"] #vehicles, body[data-mode="fly"] #aircraft { display: flex; }
+body.noui #vehicles, body.noui #aircraft, body.noui #flyhud, body.noui #touch, body.noui #hint, body.noui #toast, body.noui #fps, body.noui #tilebar { display: none !important; }
+#vehicles button, #aircraft button { padding: 5px 9px; }
+#vehicles button svg, #aircraft button svg { width: 16px; height: 16px; flex: none; }
+#vehicles button span, #aircraft button span { display: none; white-space: nowrap; }
+#vehicles button[aria-pressed="true"] span, #aircraft button[aria-pressed="true"] span { display: inline; }
+#aircraft { display: none; position: fixed; z-index: 4; right: calc(var(--gx) + var(--sar)); top: calc(54px + var(--sat)); }
+#flyhud { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
 #flash-btn { position: relative; margin-left: 4px; }
 #flash-btn::before { content: ""; position: absolute; left: -4px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
 #vehicles #flash-btn[aria-pressed="true"] { color: #fff; background: #2c4fd8; animation: vh-flash .6s steps(1) infinite; }
 @keyframes vh-flash { 50% { background: #c62026; } }
-body[data-mode="drive"] #fps { top: calc(96px + var(--sat)); }
+body[data-mode="drive"] #fps, body[data-mode="fly"] #fps { top: calc(96px + var(--sat)); }
 @media (max-width: 700px), (max-height: 500px) {
-  #vehicles { top: calc(48px + var(--sat)); }
-  #vehicles button[aria-pressed="true"] span { display: none; }
+  #vehicles, #aircraft { top: calc(48px + var(--sat)); }
+  #vehicles button[aria-pressed="true"] span, #aircraft button[aria-pressed="true"] span { display: none; }
 }
-@media (pointer: coarse) { #vehicles button { padding: 8px 9px; } }
-@media (max-width: 480px) { #vehicles { flex-direction: column; } #flash-btn { margin: 4px 0 0; } #flash-btn::before { display: none; } }
+@media (pointer: coarse) { #vehicles button, #aircraft button { padding: 8px 9px; } }
+@media (max-width: 480px) { #vehicles, #aircraft { flex-direction: column; } #flash-btn { margin: 4px 0 0; } #flash-btn::before { display: none; } }
 @media (prefers-reduced-motion: reduce) { #vehicles #flash-btn[aria-pressed="true"] { animation: none; } }
 /* landscape phones: everything at the bottom lower (beside the home indicator, not over it), the vehicles in the top row,
    the speed in the middle at the bottom */
@@ -589,8 +593,8 @@ body[data-mode="drive"] #fps { top: calc(96px + var(--sat)); }
   #locate { bottom: calc(var(--by) + 50px); }
   #status { bottom: calc(var(--by) + var(--bar-h, 42px) + 8px); }
   #promo { top: calc(34px + var(--sat)); }
-  #vehicles { position: static; }
-  #vehicles button { padding: 5px 8px; }
+  #vehicles, #aircraft { position: static; }
+  #vehicles button, #aircraft button { padding: 5px 8px; }
   #hud { left: 50%; right: auto; bottom: var(--by); transform: translateX(-50%); }
   #hud b { font-size: 32px; }
   #touch .stick, #touch .pedals, #touch .look { bottom: calc(var(--by) + 54px); }
