@@ -180,7 +180,7 @@
   </div>
 
   <dialog id="about" autofocus>
-    <h2><span data-t="title">Budapest</span> <em data-t="titleTail">in voxels</em> <small id="version"></small></h2>
+    <h2><span data-t="title">Budapest</span> <em data-t="titleTail">in voxels</em> <small id="version"></small> <button id="changelog-btn" type="button" data-t="changelog">Changelog</button></h2>
     <div id="about-text"></div>
     <div id="offline" hidden>
       <p class="off-text"></p>
@@ -189,6 +189,12 @@
     </div>
     <button id="install-btn" hidden></button>
     <button id="about-close" data-t="close">Close</button>
+  </dialog>
+
+  <dialog id="changelog">
+    <h2 data-t="changelog">Changelog</h2>
+    <div id="changelog-text"></div>
+    <button id="changelog-close" data-t="close">Close</button>
   </dialog>
 
   <div id="loading">

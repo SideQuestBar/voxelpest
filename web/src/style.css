@@ -226,15 +226,32 @@ body[data-mode="walk"] #promo, body[data-mode="drive"] #promo { opacity: .85; }
   background: rgba(30, 34, 38, .45); color: #fff; }
 #touch .pedals .gas { height: 120px; }
 
-#about, #tutorial, #app-menu { box-sizing: border-box; max-width: calc(100vw - 2 * var(--gx) - var(--sal) - var(--sar));
+#about, #changelog, #tutorial, #app-menu { box-sizing: border-box; max-width: calc(100vw - 2 * var(--gx) - var(--sal) - var(--sar));
   max-height: calc(100vh - 24px - var(--sat) - var(--sab)); max-height: calc(100dvh - 24px - var(--sat) - var(--sab)); overflow: auto;
   overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 14px; background: #faf7f1; color: var(--ink);
   box-shadow: 0 10px 40px rgba(0,0,0,.3); }
 #about { width: 520px; padding: 18px 22px; }
-#about::backdrop, #tutorial::backdrop, #app-menu::backdrop { background: rgba(10, 14, 18, .35); }
+#about::backdrop, #changelog::backdrop, #tutorial::backdrop, #app-menu::backdrop { background: rgba(10, 14, 18, .35); }
 #about h2 { margin: 0 0 8px; font-size: 19px; }
 #about h2 em { font-style: normal; font-weight: 400; }
 #version { margin-left: 6px; font-size: 12px; font-weight: 500; opacity: .6; }
+#changelog-btn { margin-left: 4px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 12px;
+  font-weight: 500; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; vertical-align: baseline; }
+#changelog { width: 560px; padding: 18px 22px; display: none; }
+#changelog[open] { display: flex; flex-direction: column; }
+#changelog h2 { margin: 0 0 6px; font-size: 19px; }
+#changelog-text { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; font-size: 13.5px; line-height: 1.45;
+  -webkit-user-select: text; user-select: text; }
+#changelog-text h3 { margin: 16px 0 4px; font-size: 15px; }
+#changelog-text h3:first-child { margin-top: 4px; }
+#changelog-text h4 { margin: 8px 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; opacity: .65; }
+#changelog-text p { margin: 0 0 6px; }
+#changelog-text ul { margin: 0 0 6px; padding-left: 20px; }
+#changelog-text li { margin: 2px 0; }
+#changelog-text code { font-size: 12px; padding: 0 3px; border-radius: 4px; background: rgba(0,0,0,.06); }
+#changelog-text a { color: var(--accent); }
+#changelog-close { align-self: flex-start; margin-top: 10px; border: 1px solid var(--line); background: #fff; border-radius: 7px;
+  padding: 4px 12px; }
 #about a { color: var(--accent); }
 /* ?nolink=true: what were links are plain text (ui/desktop.ts) */
 body.nolink #about a:not([href]) { color: inherit; }

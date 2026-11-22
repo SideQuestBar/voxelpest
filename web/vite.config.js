@@ -81,5 +81,6 @@ export default defineConfig({
   worker: { format: 'es' },
   build: { chunkSizeWarningLimit: 2000, target: 'es2022' },
   // bun run dev with the Minecraft card on (?minecraft=1) and ./bv server running here: its player count
-  server: { proxy: { '/api/minecraft': { target: 'http://127.0.0.1:8765', rewrite: () => '/status' } } },
+  // CHANGELOG.md sits in the repo root, one level up (ui/changelog.ts imports it)
+  server: { fs: { allow: ['..'] }, proxy: { '/api/minecraft': { target: 'http://127.0.0.1:8765', rewrite: () => '/status' } } },
 });

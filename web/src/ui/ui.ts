@@ -1,6 +1,7 @@
 // The page round the map: the mode switch (map, walk, drive), the language switch, the places menu with its search,
 // the time of day and the weather (ui/time.ts), names, the help line for the current mode, the tiles still loading, the
 // speedometer, the about box.
+import { changelogHtml } from './changelog';
 import { appVersion } from './desktop';
 import { lang, onLang, setLang, T, viewName, type Lang } from '../i18n';
 import type { Kind } from '../engine/weather';
@@ -82,6 +83,15 @@ export class Ui {
     about.onclick = (e) => { if (e.target === about) about.close(); };
     $('#about-close').onclick = () => about.close();
     void appVersion().then((v) => { $('#version').textContent = `v${v}`; });
+    const log = $<HTMLDialogElement>('#changelog');
+    $('#changelog-btn').onclick = () => {
+      const box = $('#changelog-text');
+      if (!box.firstChild) box.innerHTML = changelogHtml();
+      log.showModal();
+      box.scrollTop = 0;
+    };
+    log.onclick = (e) => { if (e.target === log) log.close(); };
+    $('#changelog-close').onclick = () => log.close();
     this.text();
     onLang(() => this.text());
   }
