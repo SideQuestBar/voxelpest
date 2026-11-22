@@ -1482,3 +1482,54 @@ every x by +2304).
   outline, track and field from OSM, stands from the track's edge up to 17.8 m, a white membrane roof on the cable net
   at about 31 m tilting 4 m down to the north-west, 48 radial ribs, the inclined compression truss with its two
   chords on 48 pairs of slanted columns, the pergola-paved running loop under the open outer ring.
+
+## Late November 2026, fourth round: Ferencváros, Újbuda, Víziváros and Terézváros
+
+Modelled in `landmarks_ferenc.py`, `landmarks_ujbuda.py` and `landmarks_vizivaros.py` from OSM's outlines, the Esri
+aerial and Mapillary photos, on the shared pieces in `landmarks_kit.py`. Most are painted from their outlines in one
+Field each: the depth inside the outline (`d`) and the distance along it (`s`) give walls, floors, bays and roofs.
+
+- **Ludovika Arena** (2019): a white box whose roofline arches up from the ends to ~15 m, a lattice girder along the
+  top of its long sides, climbers on wires up the panels, the glass front at its northern end, rooflights.
+- **Budapest Park**: the main stage (black steel box, roof, screens, sound wings) turned to face the crowd, the VIP
+  and sky boxes, the dance tent's membrane, bar canopies on posts and bars of stacked containers in several colours.
+- **Groupama Aréna** (2014): green stands raked from 7 m off the touchlines, the silver roof ring with FTC in white
+  on black solar panels, a translucent grey skin behind silver ribs, the open band of the upper concourse.
+- **Telekom Campus** (2022): OSM's parts and levels (4.3 m floors), blue-green glass on slim mullions, gold glass
+  bays, glazed courts, the wing bridging the entrance on white columns.
+- **MVM Dome** (György Skardelli, 2021): an oval leaning out 4.5 % as it rises to 34 m, three families of broad white
+  bands crossing on the slant over dark glass, an LED band at the top, a beige roof rising to 40.5 m.
+- **Müpa** (Zoboki, Demeter and Partners, 2005): an 18 m travertine podium with slit windows, the glass front and its
+  canopy on slender columns to the north-east, OSM's parts as the halls' stone boxes (to 41 m) and the Ludwig Museum's
+  sawtooth rooflights.
+- **MOL Campus** (Foster + Partners with Finta Studio, 2022): the tower in blue glass between white piers, closed in
+  white to the west, its roof at 120 m and the open crown to 143 m; the podium stepping down from 26 m in terraces with
+  planted edges.
+- **Kelenföld power station** (Kálmán Reichl 1914, Virgil Borbíró to 1930): ochre brick halls with pilasters and tall
+  windows, the main hall's glazed ridge, the red-brick boiler houses, the fuel tanks and the striped chimney on guys.
+- **Bikás Park**: the M4 station's ribbed oval shell, its pyramid exit, the two white air halls over the tennis courts.
+- **Kelenföld station**: the 1884 building in orange render with brick pilasters and white surrounds under slate, and
+  canopies on columns over the island platforms by it.
+- **Etele Plaza** (2021): white panels with blocks of gold, beige and rust cladding, the glass corner to the square,
+  glazed shopfronts, patches of solar panels on the roof.
+- **BME campus**: each building by its OSM id (`BME`): the 1900s brick and ochre wings with stone bands under hipped
+  roofs (R, H, T, F, the library with a copper lantern, the boiler house and its chimney), the post-war white blocks
+  with ribbon windows (D, St, J, A, V1, Z), the E tower, the laboratory halls with rooflights and vaults, the domed TR,
+  the Kármán Tódor hall of residence, and Q and I in red brick and blue glass. (K and CH stay with their own modules.)
+- **Allee** (2009): grey panels and red brick with ribbon windows, a curving glass vault over the street of shops.
+- **Szent Margit Gimnázium**: the cream school over a stone base under a grey hipped roof, the chapel's round tower
+  with its small copper dome.
+- **MOM Park** (2001): travertine with square windows, bands of blue-green glass, the glass corner on Csörsz utca
+  with its louvred crown, a planted roof edge.
+- **Szilágyi Dezső tér Reformed Church** (Samu Pecz, 1896): red brick, a nave from the Danube gable (rose window) to a
+  crossing among three polygonal apses, the north-east tower with its spire to 58 m, Zsolnay tiles in brown, yellow
+  and green.
+- **St Anne's, Batthyány tér** (1740-61): the two-towered cream and ochre front with green copper helms, the red
+  roof, the drum and dome over the sanctuary.
+- **Batthyány tér market hall** (Samu Pecz, 1902): red brick with yellow bands, two rows of arched windows, stepped
+  gables, a slate roof with a glazed ridge.
+- **St Teresa of Avila** (Fidél Kasselik 1801-11, Ybl's helm 1871): white and ochre, the tower over the front on
+  Nagymező utca with its clock and copper helm, the nave and transept under red tiles.
+- **Fixes**: the A38's two gangways as covered trusses sloping from the quay to the ship's upper deck (the OSM ways
+  are left out of the roads and decks); Rákóczi Bridge's five red masts on the deck's edge, leaning over the road on
+  raked legs, lamps at their tips (OSM maps them as buildings, which made blocks from the river bed up).

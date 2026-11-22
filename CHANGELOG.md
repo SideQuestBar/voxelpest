@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Centre.
 - Map: extended a further 2.3 km west and 1 km south, taking in Kelenföld station and Etele tér, Lágymányos, Sas-hegy
   and the whole of Népliget.
+- Map: the Ludovika Arena, Budapest Park, the Groupama Aréna, the Telekom Campus, the MVM Dome, Müpa, the MOL Campus,
+  the Kelenföld power station, Bikás Park, Kelenföld station, Etele Plaza, the BME campus, Allee, the Szent Margit
+  Gimnázium, MOM Park, the Szilágyi Dezső tér church, Batthyány tér (St Anne's and the market hall) and St Teresa of
+  Avila modelled, with views for them.
 - Map: the zoo's Great Rock and Palm House, the House of Music, St Elizabeth's and the Greek Catholic church on Rózsák
   tere, Szent József on Horváth Mihály tér, Déli station and the National Athletics Centre modelled.
 - Viewer: fly mode, with an FPV drone, a small plane and a helicopter, and their OSD and instruments.
@@ -30,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Docs: the new landmark modules and the two map fixes documented.
+- Map: the A38's gangways rebuilt as covered steel footbridges from the quay down to the ship.
+- Map: Rákóczi Bridge's red lighting masts stand on the deck, leaning over the road, instead of blocks in the river.
 - Map: the grid starts 2816 m further west, and ends 128 m short of where it did in the east; the landmark modules' coordinates moved with it.
 
 ## [1.0.6] - 2026-11-11
