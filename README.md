@@ -2,13 +2,13 @@
 
 ![The Danube from above Margaret Bridge: the Parliament, the Chain Bridge and Gellért Hill](docs/banner.jpg)
 
-A 5.9 × 6.5 km diorama of central Budapest in 0.5 m voxels, built only from free data, with thirty-nine landmarks built
+An 8.1 × 7.6 km diorama of central Budapest in 0.5 m voxels, built only from free data, with thirty-nine landmarks built
 by hand. Look down on it, walk its streets, drive through it or fly over it in a small plane, a helicopter or an FPV drone, in Budapest's live time and weather or any day and hour of
 the year, in English or Hungarian. It also runs as a Minecraft server. Made by [SideQuest Bar](https://side-quest.bar);
 inspired by Piotr Migdał's [warsaw-vibe-voxel](https://github.com/stared/warsaw-vibe-voxel), whose tile format it uses.
 
-The map runs from Déli station and Castle Hill to Keleti, the Városliget and the Puskás Aréna, and from Margaret
-Bridge past Rákóczi Bridge to the National Athletics Centre.
+The map runs from Kelenföld station, Déli and Castle Hill to Keleti, the Városliget and the Puskás Aréna, and from
+Margaret Bridge past Rákóczi Bridge to the National Athletics Centre and the whole of Népliget.
 
 ## Screenshots
 

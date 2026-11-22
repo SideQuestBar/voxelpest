@@ -1,6 +1,6 @@
 # Budapest in voxels: notes for Claude Code
 
-A 5.9 × 6.5 km voxel diorama of central Budapest at 0.5 m, from free data (OSM, Copernicus DEM, FABDEM,
+An 8.1 × 7.6 km voxel diorama of central Budapest at 0.5 m, from free data (OSM, Copernicus DEM, FABDEM,
 GlobalBuildingAtlas, Urban Atlas heights via Átló, Sentinel-2 cloudless, Mapillary map features, Wikidata), shown in
 this project's own three.js viewer (map, walk, drive and fly modes, EN/HU, keyboard, touch and game controllers). Inspired by
 [warsaw-vibe-voxel](https://github.com/stared/warsaw-vibe-voxel), whose tile format it uses. Thirty-nine landmarks are
@@ -49,7 +49,7 @@ them when `web/public/data` is missing or older than the parts.
 
 | File | Role |
 | --- | --- |
-| `aoi.py` | The grid. EOV (EPSG:23700) turned THETA = 41.5° so Pest's street grid lies on voxel faces (`orient.py` measured it). W × D = 5888 × 6528 m (Déli to the Puskás Aréna, Margaret Bridge to the National Athletics Centre). In November 2026 the map grew 512 m west and 1536 m south: every grid x moved +512 and the literal coordinates in the landmark modules were moved with it (a shared link's x moved too). `to_grid` / `to_world`. |
+| `aoi.py` | The grid. EOV (EPSG:23700) turned THETA = 41.5° so Pest's street grid lies on voxel faces (`orient.py` measured it). W × D = 8064 × 7552 m (Kelenföld to the Puskás Aréna, Margaret Bridge to the bottom of Népliget): as big as Cloudflare Pages' 20 000 files allow (19 870 with the site's own; a bigger map needs a paid plan, or bundled tiles). In November 2026 the map grew twice on the left (512 m, then 2304 m, with 128 m off the right) and at the bottom: each time every grid x moved by the columns added and the literal coordinates in the landmark modules were moved with it (`shift.py`-style: every (x, y) pair, `Frame`/`Point` call and the few loops and comparisons on x by hand), checked by comparing every landmark solid's bounding box before and after. Since then prep.py merges the two GlobalBuildingAtlas tiles and fetch_fabdem gets N47E018 too. `to_grid` / `to_world`. |
 | `fetch_*.py/.sh`, `osm_pbf.py`, `rangezip.py` | Downloads. OSM from BBBike's Budapest extract; GBA and FABDEM read by HTTP range requests out of big zips; Sentinel-2 from EOX's WMTS; Mapillary from its vector tiles. |
 | `prep.py` | DSM, FABDEM (`dtm`), GBA and Sentinel-2 (`s2`, uint8 RGB) resampled onto the 1 m grid -> `data/prep.npz`. |
 | `osm.py` | OSM JSON -> shapely geometries in grid coordinates (x = column, y = row, metres). |

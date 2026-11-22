@@ -97,7 +97,7 @@ follows the browser (Hungarian if any of its languages is Hungarian), and the EN
 The URL takes `view` (overview, parliament, kossuth, castle, chainbridge, chainarch, basilica, gellert, heroes, fishermans,
 matthias, hilton, liberty, elisabeth, market, rakoczi, synagogue, statue, citadella, varosliget, szechenyi, puskas, szell,
 margaret, petofi, opera, erkel, keleti, nyugati, westend, ethnography, balna, zoo, eye, gellerthotel, bme, museum, a38, blaha,
-music, rozsak, jozsef, deli, nac,
+music, rozsak, jozsef, deli, nac, nepliget, kelenfold,
 sidequest, sidequest_inside), `mode` (map, walk, drive, fly), `vehicle` (taxi, trabant, police, bubi, bus: for this visit;
 the picker's choice is remembered), `aircraft` (drone, plane, heli: the same), `date` (`MM-DD`, e.g. `10-20`, or a day of the year), `hour` (0-24) and `weather`
 (clear, cloudy, rain, snow; the older `snow=1` still works), any of which starts on that date, at that hour and sky

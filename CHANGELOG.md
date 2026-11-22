@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   St Margaret's Church, Arena Mall and the MTK Sportpark modelled.
 - Map: extended 0.5 km west and 1.5 km south, taking in Déli station, more of Ferencváros and the National Athletics
   Centre.
+- Map: extended a further 2.3 km west and 1 km south, taking in Kelenföld station and Etele tér, Lágymányos, Sas-hegy
+  and the whole of Népliget.
 - Map: the zoo's Great Rock and Palm House, the House of Music, St Elizabeth's and the Greek Catholic church on Rózsák
   tere, Szent József on Horváth Mihály tér, Déli station and the National Athletics Centre modelled.
 - Viewer: fly mode, with an FPV drone, a small plane and a helicopter, and their OSD and instruments.
@@ -28,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Docs: the new landmark modules and the two map fixes documented.
-- Map: the grid starts 512 m further west; the landmark modules' coordinates moved with it.
+- Map: the grid starts 2816 m further west, and ends 128 m short of where it did in the east; the landmark modules' coordinates moved with it.
 
 ## [1.0.6] - 2026-11-11
 
