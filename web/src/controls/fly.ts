@@ -1,23 +1,40 @@
-// Fly mode: the FPV drone, the small plane and the helicopter over the voxels, with arcade physics.
-// - The drone flies in angle mode: the stick tilts it (up to 55°) and it accelerates the way it leans, holding its
-//   height with the throttle centred; Space climbs, Shift sinks. Seen from its camera, tilted up 20° as FPV cameras are.
-// - The plane: throttle, pitch, roll and rudder; turns as it banks, sinks and drops its nose below 25 m/s, lands and
-//   takes off from any flat ground. Seen from behind.
-// - The helicopter: the cyclic tilts it and it moves that way, the collective climbs and sinks, the pedals turn it;
-//   it hovers hands off. Seen from behind.
+// Fly mode: the FPV drone, the small plane and the helicopter over the voxels, each flown on its own physics.
+// - The plane: a 1,050 kg four-seater with a 16.2 m² wing and 180 hp. Lift and drag from the angle of attack, thrust
+//   from a propeller that loses bite with speed, and a tail that keeps the nose in the airflow. The stick moves the
+//   angle of attack the tail holds (held long, the trim follows), so with the stick let go the throttle climbs and
+//   sinks it and the speed stays near the trimmed one; banked, the lift turns it. It stalls past 15°, lands and takes
+//   off from any flat ground. Seen from behind.
+// - The helicopter: the rotor's thrust along its mast, so leaning it trades height for speed; translational lift above
+//   about 15 kt; the collective stays where it is put; the tail weathervanes it into the airflow. Seen from behind.
+// - The drone: thrust along its body and nothing holding its height: tilted, it sinks unless given throttle. The stick
+//   tilts it (angle mode, up to 57°), the throttle is sprung to hover; seen from its camera, tilted up 20°.
 // Anything solid where it flies is a crash: a moment's pause, then it is back where it last flew clear.
-// Keys: W/S and A/D pitch and roll (the plane: W pushes the nose down), Q/E yaw, Space/Shift or R/F up and down
-// (throttle, collective), V the next aircraft, T back in the air. A controller: the left stick pitch and roll, the
-// right stick yaw, RT/LT up and down, LB/RB the aircraft, Y back in the air. Touch: the stick, the pedals up and down.
+// Keys: W/S and A/D pitch and roll (W pushes the nose down), Q/E yaw, Space/Shift or R/F throttle or collective up and
+// down, V the next aircraft, T back in the air. A controller: the left stick pitch and roll, the right stick yaw,
+// RT/LT up and down, LB/RB the aircraft, Y back in the air. Touch: the stick, the pedals up and down.
 import * as THREE from 'three';
 import type { World } from '../engine/world';
-import { clamp, smoothstep, wrapPi } from '../util';
+import { clamp, isTouch, smoothstep, wrapPi } from '../util';
 import { AIR, buildCraft, type AircraftKind, type AirSpec, type Craft } from './aircraft';
 import { mats } from './kit';
 import { PAD, type Input } from './input';
+import { Streaks } from './streaks';
 
 const G = 9.81;
 const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
+
+// the plane's wing: dynamic pressure × area per kg, per (m/s)²; lift from the angle of attack (rad), stalling at 15°
+const QS = (0.5 * 1.225 * 16.2) / 1050;
+const A0 = -0.06, CLA = 5.0, ASTALL = 0.26;
+const lift = (a: number) => a > ASTALL ? Math.max(1.6 - 4 * (a - ASTALL), 0.9 * Math.sin(2 * a))
+  : a < -0.26 ? Math.min(-1.0 + 4 * (-0.26 - a), 0.9 * Math.sin(2 * a)) : CLA * (a - A0);
+const drag = (cl: number, a: number) => 0.032 + 0.045 * cl * cl + 1.2 * Math.max(0, Math.abs(a) - ASTALL) * Math.abs(Math.sin(a));
+const thrust = (p: number, v: number) => 3.0 * p * Math.max(0.15, 1 - (0.55 * v) / 70);
+// level flight at v: the angle of attack and the throttle it takes
+function trim(v: number) {
+  const cl = G / (QS * v * v), a = cl / CLA + A0;
+  return { a, p: clamp((QS * v * v * drag(cl, a)) / thrust(1, v), 0, 1) };
+}
 
 export interface Telemetry {
   kind: AircraftKind;
@@ -27,14 +44,22 @@ export interface Telemetry {
   agl: number;          // m over what is under it
   heading: number;      // radians, map north = 0, clockwise
   pitch: number; roll: number;  // radians, nose up and right wing down positive
+  turn: number;         // rad/s, right positive
+  slip: number;         // the ball: sideways force over the weight, right positive
+  aoa: number;          // the plane's angle of attack, radians
   power: number;        // throttle or collective, 0..1
+  rpm: number;          // the plane's engine, the helicopter's rotor in %
+  torque: number;       // the helicopter's, %
   time: number;         // seconds since take-off
   home: number;         // m to where it started
   homeDir: number;      // radians, relative to the heading
+  link: number;         // the drone's video link, 0..1
   crashed: boolean;
   ground: boolean;
   stall: boolean;
 }
+
+type Sticks = { pitch: number; roll: number; yaw: number; up: number };
 
 export class Flyer {
   readonly pos = new THREE.Vector3();
@@ -47,24 +72,47 @@ export class Flyer {
   private craft: Craft | null = null;
   private yaw = 0;                // the drone's and the helicopter's heading
   private tilt = { p: 0, r: 0 };  // their pitch and roll
-  private speed = 0;              // the plane's airspeed
+  private thr = 0;                // the drone's sprung throttle, -1..1
+  private aTrim = 0;              // the plane's trimmed angle of attack
+  private readonly dir = new THREE.Vector3(1, 0, 0);  // the way it moved last step
+  private readonly st: Sticks = { pitch: 0, roll: 0, yaw: 0, up: 0 };
+  private readonly acc = new THREE.Vector3();
   private onGround = false;
   private crash = 0;              // seconds left of the crash pause
   private spin = 0;
   private t = 0;
   private flown = 0;
+  private turnRate = 0;
+  private lastHead = 0;
+  private ball = 0;
   private home = new THREE.Vector3();
   private safe: { p: THREE.Vector3; yaw: number; t: number } = { p: new THREE.Vector3(), yaw: 0, t: 0 };
   private readonly camPos = new THREE.Vector3();
   private readonly camLook = new THREE.Vector3();
+  private readonly camUp = new THREE.Vector3(0, 1, 0);
   private camSet = false;
+  private active = false;
+  private fovKick = 0;
+  // the drone's link: how much of the way home is blocked, glitches now and then
+  private occl = 0;
+  private linkT = 0;
+  private glitch = { left: 0, k: 0 };
+  link = 1;
+  breakup = 0;
+  private readonly streaks: Streaks;
   // the map's edges (m), and the compass: map north as a heading in the grid
   bounds: [number, number, number, number] = [-400, -400, 6300, 7000];
   north = 0;
   onKind: ((k: AircraftKind) => void) | null = null;
 
   constructor(private readonly scene: THREE.Scene, private readonly camera: THREE.PerspectiveCamera, private readonly world: World,
-    private readonly input: Input) {}
+    private readonly input: Input, dom: HTMLElement) {
+    this.streaks = new Streaks(scene, isTouch() ? 140 : 280, dom, [140, 80, 140]);
+    this.streaks.range = [22, 70];
+    this.streaks.strength = 0.34;
+    this.streaks.lift = 0;
+    this.streaks.trail = 0.06;
+  }
 
   private use(k: AircraftKind) {
     let c = this.crafts.get(k);
@@ -78,7 +126,7 @@ export class Flyer {
 
   setKind(k: AircraftKind) {
     if (this.craft && k === this.kind) return;
-    const on = !!this.craft?.g.visible;
+    const on = this.active;
     if (this.craft) this.craft.g.visible = false;
     this.kind = k;
     this.spec = AIR[k];
@@ -99,12 +147,24 @@ export class Flyer {
     this.pos.set(x, y, z);
     this.yaw = heading;
     this.tilt = { p: 0, r: 0 };
-    this.q.setFromAxisAngle(Y, -heading);
-    this.speed = this.kind === 'plane' ? 46 : 0;
-    this.vel.set(Math.cos(heading) * this.speed, 0, Math.sin(heading) * this.speed);
-    this.power = this.kind === 'plane' ? 0.62 : 0.5;
+    this.thr = 0;
+    if (this.kind === 'plane') {
+      const v = 52, tr = trim(v);
+      this.aTrim = tr.a;
+      this.power = tr.p;
+      this.q.setFromEuler(new THREE.Euler(0, -heading, tr.a, 'YZX'));
+      this.vel.set(Math.cos(heading) * v, 0, Math.sin(heading) * v);
+    } else {
+      this.q.setFromAxisAngle(Y, -heading);
+      this.vel.set(0, 0, 0);
+      this.power = 0.5;
+    }
+    this.dir.copy(this.vel).normalize();
+    if (this.dir.lengthSq() < 0.5) this.dir.set(Math.cos(heading), 0, Math.sin(heading));
     this.onGround = false;
     this.crash = 0;
+    this.lastHead = heading;
+    this.turnRate = 0;
     if (!keepHeight) { this.home.copy(this.pos); this.flown = 0; }
     this.safe = { p: this.pos.clone(), yaw: heading, t: 0 };
     this.camSet = false;
@@ -128,27 +188,35 @@ export class Flyer {
 
   show(on: boolean, night: number) {
     if (!this.craft) this.setKind(this.kind);
-
+    this.active = on;
     this.craft!.g.visible = on && this.kind !== 'drone';
     for (const m of this.craft!.glow) m.emissiveIntensity = 0.4 + 2.2 * night;
     const M = mats();
     M.lamp.emissiveIntensity = 0.3 + 2.5 * night;
+    if (!on) this.streaks.mesh.visible = false;
+    else if (this.kind !== 'drone') this.streaks.update(this.camera, this.camera.position, this.vel, 0, night);
+    else this.streaks.mesh.visible = false;
   }
 
-  // the stick, keys and pedals, each -1..1
-  private sticks() {
+  // the stick, keys and pedals, each -1..1; keys ease in and out as a thumb on a stick would
+  private sticks(dt: number): Sticks {
     const i = this.input, pad = i.pad;
     let pitch = i.axis(['KeyW', 'ArrowUp'], ['KeyS', 'ArrowDown']);   // + pulls back: nose up, or backwards
     let roll = i.axis(['KeyA', 'ArrowLeft'], ['KeyD', 'ArrowRight']);
     let yaw = i.axis(['KeyQ'], ['KeyE']);
     let up = i.axis(['ShiftLeft', 'ShiftRight', 'KeyF'], ['Space', 'KeyR']);
-    if (i.stick.active) { pitch = -i.stick.y; roll = i.stick.x; yaw = i.stick.x * 0.7; }
-    if (pad.lx || pad.ly) { pitch = pad.ly; roll = pad.lx; }
+    let analog = false;
+    if (i.stick.active) { pitch = -i.stick.y; roll = i.stick.x; yaw = this.kind === 'plane' ? 0 : i.stick.x * 0.6; analog = true; }
+    if (pad.lx || pad.ly) { pitch = pad.ly; roll = pad.lx; analog = true; }
     if (pad.rx) yaw = pad.rx;
     if (pad.rt || pad.lt) up = pad.rt - pad.lt;
     if (i.pedal.gas) up = 1;
     if (i.pedal.brake) up = -1;
-    return { pitch, roll, yaw, up };
+    const k = 1 - Math.exp(-dt * (analog ? 25 : 4.5));
+    const s = this.st;
+    s.pitch += (pitch - s.pitch) * k; s.roll += (roll - s.roll) * k;
+    s.yaw += (yaw - s.yaw) * (1 - Math.exp(-dt * 9)); s.up = up;
+    return s;
   }
 
   update(dt: number) {
@@ -158,13 +226,16 @@ export class Flyer {
     if (i.has('KeyT') || i.pressed(PAD.Y)) { i.down.delete('KeyT'); this.respawn(); }
     if (this.crash > 0) {
       this.crash -= dt;
+      this.breakup = 1;
       if (this.crash <= 0) this.respawn();
       this.follow(dt);
       return;
     }
-    const s = this.sticks();
+    const s = this.sticks(dt);
+    const was = this.vel.clone();
     if (this.kind === 'plane') this.planeStep(dt, s);
     else this.rotorStep(dt, s);
+    if (dt > 0) this.acc.copy(this.vel).sub(was).divideScalar(dt);
     // the map's edges: turned back
     const [x0, z0, x1, z1] = this.bounds;
     if (this.pos.x < x0 || this.pos.x > x1 || this.pos.z < z0 || this.pos.z > z1) {
@@ -184,10 +255,18 @@ export class Flyer {
     }
     if (crashed) {
       this.crash = 1.6;
-      this.vel.set(0, 0, 0); this.speed = 0;
+      this.vel.set(0, 0, 0);
     } else if (!this.onGround && this.t - this.safe.t > 1.0 && this.pos.y > this.groundUnder() + 6) {
       this.safe = { p: this.pos.clone(), yaw: this.heading(), t: this.t };
     }
+    // the turn needle and the ball
+    const hd = this.heading();
+    if (dt > 0) this.turnRate += (wrapPi(hd - this.lastHead) / dt - this.turnRate) * (1 - Math.exp(-dt * 3));
+    this.lastHead = hd;
+    const sf = this.acc.clone().add(new THREE.Vector3(0, G, 0)), u = Y.clone().applyQuaternion(this.q);
+    const b = clamp(sf.dot(r) / Math.max(sf.dot(u), 2), -1, 1);
+    this.ball += (b - this.ball) * (1 - Math.exp(-dt * 4));
+    if (this.kind === 'drone') this.linkStep(dt);
     this.flown += dt;
     this.pose();
     this.follow(dt);
@@ -195,7 +274,7 @@ export class Flyer {
 
   private groundUnder(x = this.pos.x, z = this.pos.z, y = this.pos.y) {
     const fl = this.world.floor(x, z, y + 0.5, 0);
-    return fl ? fl.top : this.world.groundAt(x, z) ?? -1e3;
+    return fl ? fl.top : this.world.groundAt(x, z) ?? 0;
   }
 
   private respawn() {
@@ -203,78 +282,121 @@ export class Flyer {
     this.place(p.x, p.y, p.z, this.safe.yaw, true);
   }
 
+  // gusts: stronger low over the roofs, a slow drift of three sines in each direction
+  private gust(out: THREE.Vector3, amp: number) {
+    const t = this.t;
+    out.set(Math.sin(t * 0.9) + 0.6 * Math.sin(t * 2.3 + 1) + 0.3 * Math.sin(t * 5.1 + 2),
+      0.7 * (Math.sin(t * 1.3 + 3) + 0.5 * Math.sin(t * 3.7)) , Math.sin(t * 1.1 + 4) + 0.6 * Math.sin(t * 2.9 + 5) + 0.3 * Math.sin(t * 6.3));
+    const agl = this.pos.y - Math.max(this.groundUnder(), 0);
+    return out.multiplyScalar(amp * (0.35 + 0.65 * smoothstep(250, 20, agl)));
+  }
+
   // ---------------------------------------------------------------- the plane
-  private planeStep(dt: number, s: { pitch: number; roll: number; yaw: number; up: number }) {
-    this.power = clamp(this.power + s.up * dt * 0.5, 0, 1);
-    const f = X.clone().applyQuaternion(this.q), up = Y.clone().applyQuaternion(this.q);
+  private planeStep(dt: number, s: Sticks) {
+    this.power = clamp(this.power + s.up * dt * 0.4, 0, 1);
+    const f = X.clone().applyQuaternion(this.q), u = Y.clone().applyQuaternion(this.q), r = Z.clone().applyQuaternion(this.q);
+    const V = this.vel.length();
+    const vd = V > 0.5 ? this.vel.clone().divideScalar(V) : f.clone();
+    const a = V > 1 ? Math.atan2(-this.vel.dot(u), this.vel.dot(f)) : 0;     // angle of attack
+    const b = V > 1 ? Math.atan2(this.vel.dot(r), this.vel.dot(f)) : 0;      // sideslip, wind from the right +
+    const bank = Math.atan2(-r.y, u.y);
     const pitch = Math.asin(clamp(f.y, -1, 1));
-    const bank = Math.atan2(-Z.clone().applyQuaternion(this.q).y, up.y);  // right wing down positive
-    const v = this.speed;
-    // thrust against drag and the climb
-    const T = 9.2 * this.power, kd = 9.2 / (this.spec.vmax * this.spec.vmax);
-    this.speed = Math.max(0, v + (T - kd * v * v - G * Math.sin(pitch) - (this.onGround ? 0.6 + (s.up < 0 && this.power < 0.05 ? 4 : 0) : 0)) * dt);
-    const ctl = smoothstep(4, 30, v);  // the controls bite with airspeed
-    const stall = smoothstep(27, 21, v) * (this.onGround ? 0 : 1);
-    // rates about the body: roll, pitch (nose up +), yaw (nose right +)
-    // the stick asks for a bank (up to 60°) and, let go, it levels its wings and slowly its nose
-    let rr = clamp((s.roll * 1.05 - bank) * 2.2, -1.3, 1.3) * ctl;
-    let pr = s.pitch * 0.75 * ctl - stall * 0.7 - pitch * 0.35 * (1 - Math.abs(s.pitch)) * ctl;
-    const yr = s.yaw * 0.35 * ctl;
-    if (this.onGround) { rr = -bank * 3; pr = Math.min(pr, v > 25 ? pr : -pitch * 2); }
+    const ctl = smoothstep(3, 30, V);                     // the controls bite with airspeed
+    const stalled = smoothstep(ASTALL - 0.02, ASTALL + 0.06, a);
+    // the elevator: the angle of attack the tail holds; held, the trim follows slowly
+    const aCmd = this.aTrim + s.pitch * (s.pitch > 0 ? 0.24 : 0.18);
+    if (Math.abs(s.pitch) > 0.05 && !this.onGround) this.aTrim = clamp(this.aTrim + s.pitch * 0.025 * dt, -0.04, 0.14);
+    // body rates: roll (right wing down +), pitch (nose up +), yaw (nose right +); a trainer levels its wings let go
+    let rr = ctl * (s.roll * 0.85 - (Math.abs(s.roll) < 0.05 && Math.abs(bank) < 2.6 ? bank * 0.3 : 0))
+      + stalled * Math.sin(this.t * 1.7) * 0.9;
+    let pr = ctl * 3.2 * (aCmd - a) - stalled * 0.9;
+    const yr = ctl * (2.4 * b + s.yaw * 0.45);
+    if (this.onGround) rr = -bank * 4;
     this.q.multiply(new THREE.Quaternion().setFromAxisAngle(X, rr * dt));
     this.q.multiply(new THREE.Quaternion().setFromAxisAngle(Z, pr * dt));
     this.q.multiply(new THREE.Quaternion().setFromAxisAngle(Y, -yr * dt));
-    // the turn a bank makes: a yaw about the world's up, g tan(bank) / v
-    if (v > 5 && !this.onGround) this.q.premultiply(new THREE.Quaternion().setFromAxisAngle(Y, -(G * Math.tan(clamp(bank, -1.3, 1.3)) / v) * dt));
-    if (this.onGround) this.q.premultiply(new THREE.Quaternion().setFromAxisAngle(Y, -s.roll * 0.5 * smoothstep(0.5, 6, v) * dt));
+    // the tail keeps the nose where the air comes from: as the flight path turns, the aeroplane turns with it
+    if (!this.onGround && V > 2) {
+      const turn = new THREE.Quaternion().setFromUnitVectors(this.dir, vd);
+      this.q.premultiply(new THREE.Quaternion().slerp(turn, ctl));
+    }
     this.q.normalize();
-    const f2 = X.clone().applyQuaternion(this.q);
-    // lift short of the weight below the stall: it sinks
-    const sink = stall * 12 + (this.onGround ? 0 : smoothstep(30, 24, v) * 3 + (1 - Math.cos(bank)) * 4);
-    this.vel.copy(f2).multiplyScalar(this.speed);
-    this.vel.y -= sink;
+    this.dir.copy(vd);
+    // the forces, per kg: thrust, lift square to the airflow, drag along it, the fuselage against sideslip, gravity
+    const qs = QS * V * V, cl = lift(a), cd = drag(cl, a);
+    const up = u.clone().addScaledVector(vd, -u.dot(vd));
+    if (up.lengthSq() < 1e-6) up.copy(u); else up.normalize();
+    const acc = f.clone().multiplyScalar(thrust(this.power, V))
+      .addScaledVector(up, qs * cl).addScaledVector(vd, -qs * cd).addScaledVector(r, -qs * 0.9 * b);
+    acc.y -= G;
+    if (!this.onGround) acc.add(this.gust(new THREE.Vector3(), 0.55));
+    this.vel.addScaledVector(acc, dt);
+    // on the ground: rolling resistance, the brakes with the throttle shut, the nose wheel steering, no sliding sideways
+    if (this.onGround) {
+      const ff = new THREE.Vector3(f.x, 0, f.z).normalize();
+      const steer = (s.roll * 0.6 + s.yaw * 0.6) * smoothstep(0.3, 5, V) * (1 - 0.75 * smoothstep(15, 30, V));
+      this.q.premultiply(new THREE.Quaternion().setFromAxisAngle(Y, -steer * dt));
+      ff.applyAxisAngle(Y, -steer * dt);
+      const along = this.vel.x * ff.x + this.vel.z * ff.z;
+      const slow = (0.25 + (s.up < 0 && this.power < 0.02 ? 4 : 0)) * dt;
+      const v2 = Math.sign(along) * Math.max(0, Math.abs(along) - slow);
+      this.vel.set(ff.x * v2, Math.max(this.vel.y, 0), ff.z * v2);
+    }
     this.pos.addScaledVector(this.vel, dt);
     // the ground: a landing if gentle, a crash if not
-    const gy = this.groundUnder() + 0.25;
+    const gy = this.groundUnder() + 0.02;
     if (this.pos.y <= gy) {
-      const hard = this.vel.y < -4.5 || Math.abs(bank) > 0.35 || pitch < -0.25 || this.speed > 45;
-      if (hard && !this.onGround) { this.crash = 1.6; this.speed = 0; return; }
+      if (!this.onGround && (this.vel.y < -3.5 || Math.abs(bank) > 0.3 || pitch < -0.1 || V > 48)) { this.crash = 1.6; return; }
       this.pos.y = gy;
+      this.vel.y = Math.max(this.vel.y, 0);
       this.onGround = true;
-      const level = new THREE.Quaternion().setFromAxisAngle(Y, -this.heading());
-      this.q.slerp(level.multiply(new THREE.Quaternion().setFromAxisAngle(Z, Math.max(pitch, 0))), 1 - Math.exp(-dt * 6));
-    } else if (this.onGround && this.pos.y > gy + 0.4) this.onGround = false;
+    } else if (this.onGround && this.pos.y > gy + 0.08) this.onGround = false;
+    if (this.onGround) {
+      const p2 = clamp(Math.asin(clamp(X.clone().applyQuaternion(this.q).y, -1, 1)), 0, 0.22);
+      this.q.setFromEuler(new THREE.Euler(0, -this.heading(), p2, 'YZX'));
+      this.dir.copy(X).applyQuaternion(this.q);
+    }
     this.spin += (15 + 50 * this.power) * dt;
   }
 
   // ---------------------------------------------------------------- the drone and the helicopter
-  private rotorStep(dt: number, s: { pitch: number; roll: number; yaw: number; up: number }) {
+  private rotorStep(dt: number, s: Sticks) {
     const drone = this.kind === 'drone';
-    const maxT = drone ? 0.96 : 0.45, yawR = drone ? 3.2 : 1.1, resp = drone ? 9 : 2.6;
+    const maxP = drone ? 1.0 : 0.48, maxR = drone ? 1.0 : 0.55, resp = drone ? 10 : 2.8;
     // the attitude follows the stick: forward stick (pitch < 0) noses down
-    this.tilt.p += (s.pitch * maxT - this.tilt.p) * (1 - Math.exp(-dt * resp));
-    this.tilt.r += (s.roll * maxT - this.tilt.r) * (1 - Math.exp(-dt * resp));
-    this.yaw = wrapPi(this.yaw + s.yaw * yawR * dt + (drone ? 0 : s.roll * 0.35 * dt));
-    this.power = clamp(0.5 + s.up * 0.5, 0, 1);
-    // accelerating the way it leans, against drag
-    const c = Math.cos(this.yaw), sn = Math.sin(this.yaw);
-    const ax = -Math.tan(this.tilt.p) * G, az = Math.tan(this.tilt.r) * G;   // forward, right
-    const drag = drone ? 0.0065 : 0.0024;
-    const hv = new THREE.Vector2(this.vel.x, this.vel.z), sp = hv.length();
-    this.vel.x += (c * ax - sn * az) * dt - this.vel.x * sp * drag * dt * G / 1.5;
-    this.vel.z += (sn * ax + c * az) * dt - this.vel.z * sp * drag * dt * G / 1.5;
-    // up and down: a climb rate the throttle or collective asks for, reached quickly
-    const want = s.up * (drone ? 14 : 8);
-    this.vel.y += (want - this.vel.y) * (1 - Math.exp(-dt * (drone ? 4 : 1.6)));
-    if (!drone) {
-      const vmax = this.spec.vmax;
-      const hs = Math.hypot(this.vel.x, this.vel.z);
-      if (hs > vmax) { this.vel.x *= vmax / hs; this.vel.z *= vmax / hs; }
+    this.tilt.p += (s.pitch * maxP - this.tilt.p) * (1 - Math.exp(-dt * resp));
+    this.tilt.r += (s.roll * maxR - this.tilt.r) * (1 - Math.exp(-dt * resp));
+    const vh = Math.hypot(this.vel.x, this.vel.z);
+    let yawRate = s.yaw * (drone ? 3.4 : 1.0);
+    if (!drone && vh > 3) {  // the fin turns the nose into the airflow
+      const beta = wrapPi(Math.atan2(this.vel.z, this.vel.x) - this.yaw);
+      yawRate += 1.6 * beta * smoothstep(8, 28, vh) * (Math.abs(beta) < 2.4 ? 1 : 0.3);
     }
+    this.yaw = wrapPi(this.yaw + yawRate * dt);
+    this.q.setFromEuler(new THREE.Euler(this.tilt.r, -this.yaw, this.tilt.p, 'YZX'));
+    const up = Y.clone().applyQuaternion(this.q);
+    let T: number;
+    if (drone) {
+      this.thr += (s.up - this.thr) * (1 - Math.exp(-dt * 12));
+      T = G * (this.thr >= 0 ? 1 + 2.4 * this.thr : 1 + 0.92 * this.thr);
+      this.power = T / (3.4 * G);
+    } else {
+      this.power = clamp(this.power + s.up * dt * 0.45, 0, 1);
+      T = G * (0.55 + 0.9 * this.power) * (1 + 0.12 * smoothstep(6, 20, vh));
+    }
+    // thrust along the mast or the body; drag; the rotor's or the props' inflow damping a climb or a sink
+    const V = this.vel.length();
+    const k = drone ? 0.012 : 2.7e-4 * (1 + 3 * smoothstep(65, 85, V));
+    const acc = up.multiplyScalar(this.onGround && T < G ? 0 : T).addScaledVector(this.vel, -k * V);
+    acc.x -= this.vel.x * (drone ? 0.04 : 0.01);
+    acc.z -= this.vel.z * (drone ? 0.04 : 0.01);
+    acc.y -= this.vel.y * (drone ? 0.7 : 0.55) + G;
+    if (!this.onGround) acc.add(this.gust(new THREE.Vector3(), drone ? 0.5 : 0.7));
+    this.vel.addScaledVector(acc, dt);
     this.pos.addScaledVector(this.vel, dt);
     const gy = this.groundUnder() + (drone ? 0.05 : 0.02);
     if (this.pos.y <= gy) {
-      if (this.vel.y < -7 || Math.hypot(this.vel.x, this.vel.z) > 14) { this.crash = 1.6; return; }
+      if (this.vel.y < (drone ? -7 : -3.5) || vh > (drone ? 14 : 10)) { this.crash = 1.6; return; }
       this.pos.y = gy;
       this.vel.y = Math.max(this.vel.y, 0);
       this.vel.x *= Math.exp(-dt * 4); this.vel.z *= Math.exp(-dt * 4);
@@ -283,6 +405,28 @@ export class Flyer {
     } else this.onGround = false;
     this.q.setFromEuler(new THREE.Euler(this.tilt.r, -this.yaw, this.tilt.p, 'YZX'));
     this.spin += (drone ? 0 : 7 + 6 * this.power) * dt * Math.PI * 2;
+  }
+
+  // the drone's video link: weaker with distance and with buildings between it and where it took off
+  private linkStep(dt: number) {
+    this.linkT -= dt;
+    const hx = this.home.x, hy = this.home.y + 2, hz = this.home.z;
+    const dist = this.pos.distanceTo(this.home);
+    if (this.linkT <= 0) {
+      this.linkT = 0.2;
+      let n = 0;
+      for (let i = 1; i < 10; i++) {
+        const k = i / 10, x = this.pos.x + (hx - this.pos.x) * k, y = this.pos.y + (hy - this.pos.y) * k, z = this.pos.z + (hz - this.pos.z) * k;
+        if (this.world.blocked(x, z, y - 0.5, y + 0.5)) n++;
+      }
+      this.occl = Math.min(1, n / 2);
+    }
+    const want = clamp(1 - 0.5 * smoothstep(300, 4000, dist) - this.occl * (0.2 + 0.55 * smoothstep(40, 500, dist)), 0, 1);
+    this.link += (want - this.link) * (1 - Math.exp(-dt * 2.5));
+    // now and then a glitch, more often on a weak link
+    if (this.glitch.left > 0) this.glitch.left -= dt;
+    else if (Math.random() < dt * (0.04 + 0.8 * (1 - this.link))) this.glitch = { left: 0.05 + Math.random() * 0.25, k: 0.12 + Math.random() * 0.35 };
+    this.breakup = Math.max(smoothstep(0.65, 0.1, this.link) * 0.95, this.glitch.left > 0 ? this.glitch.k : 0);
   }
 
   // ---------------------------------------------------------------- the model and the camera
@@ -300,43 +444,78 @@ export class Flyer {
     for (const b of c.blur) b.visible = fast;
   }
 
+  // a shake from three sines per axis, amplitude 1
+  private shake(f: number, seed: number) {
+    const t = this.t * f;
+    return Math.sin(t * 1.0 + seed) * 0.5 + Math.sin(t * 2.31 + seed * 2.1) * 0.3 + Math.sin(t * 4.7 + seed * 3.3) * 0.2;
+  }
+
   private follow(dt: number) {
     const cam = this.camera;
+    const V = this.vel.length(), fast = smoothstep(15, 75, V);
+    let fov = this.spec.fov;
     if (this.kind === 'drone') {
       cam.position.copy(this.pos).addScaledVector(Y, 0.03);
       cam.quaternion.copy(this.q).multiply(new THREE.Quaternion().setFromAxisAngle(Z, 0.35));
+      // the camera on its soft mount: a buzz from the motors, more at full throttle and speed
+      const amp = 0.0025 + 0.005 * this.power + 0.004 * smoothstep(10, 45, V);
+      cam.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(this.shake(31, 1) * amp, this.shake(27, 2) * amp, this.shake(23, 3) * amp)));
       // three.js cameras look down their -z: turn the body's +x forward onto it
       cam.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(Y, -Math.PI / 2));
       if (this.crash > 0) cam.position.y += Math.sin(this.t * 40) * 0.02;
     } else {
       const [back, up, ahead] = this.spec.cam;
-      const f = X.clone().applyQuaternion(this.q);
+      const f = X.clone().applyQuaternion(this.q), bu = Y.clone().applyQuaternion(this.q);
       const flat = new THREE.Vector3(f.x, this.kind === 'plane' ? f.y * 0.6 : 0, f.z).normalize();
-      const want = this.pos.clone().addScaledVector(flat, -back).addScaledVector(Y, up);
+      // further back, wider and shakier the faster it goes; a kick of field of view as it speeds up
+      const want = this.pos.clone().addScaledVector(flat, -back * (1 + 0.2 * fast)).addScaledVector(Y, up * (1 - 0.15 * fast));
       const look = this.pos.clone().addScaledVector(flat, ahead).addScaledVector(Y, up * 0.25);
-      const k = this.camSet ? 1 - Math.exp(-dt * 5) : 1;
+      const k = this.camSet ? 1 - Math.exp(-dt * (4 + 3 * fast)) : 1;
       this.camPos.lerp(want, k);
       this.camLook.lerp(look, this.camSet ? 1 - Math.exp(-dt * 8) : 1);
       if (!this.camSet) { this.camPos.copy(want); this.camLook.copy(look); this.camSet = true; }
       const fl = this.world.floor(this.camPos.x, this.camPos.z, this.camPos.y + 0.5, 0);
       if (fl && this.camPos.y < fl.top + 1.5) this.camPos.y = fl.top + 1.5;
-      cam.position.copy(this.camPos);
-      cam.up.set(0, 1, 0);
-      cam.lookAt(this.camLook);
+      const stall = this.kind === 'plane' && !this.onGround ? this.telemetryStall() : 0;
+      const agl = this.pos.y - Math.max(this.groundUnder(), 0);
+      const amp = this.onGround ? 0.02 * smoothstep(2, 30, V)
+        : 0.03 + 0.16 * fast * fast + 0.12 * fast * smoothstep(80, 15, agl) + 0.35 * stall + (this.kind === 'heli' ? 0.03 : 0);
+      const sh = new THREE.Vector3(this.shake(9, 1), this.shake(11, 2), this.shake(8, 3)).multiplyScalar(amp);
+      cam.position.copy(this.camPos).add(sh);
+      // the camera leans a little with the bank
+      this.camUp.lerp(Y.clone().lerp(bu, this.kind === 'plane' ? 0.3 : 0.18).normalize(), this.camSet ? 1 - Math.exp(-dt * 4) : 1);
+      cam.up.copy(this.camUp);
+      cam.lookAt(this.camLook.clone().addScaledVector(sh, 0.5));
+      const fwdAcc = dt > 0 ? this.acc.dot(f) : 0;
+      this.fovKick += (clamp(fwdAcc / 4, -1, 1) - this.fovKick) * (1 - Math.exp(-dt * 2));
+      fov += 10 * fast + 3 * this.fovKick;
     }
-    if (Math.abs(cam.fov - this.spec.fov) > 0.01) { cam.fov = this.spec.fov; cam.updateProjectionMatrix(); }
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
+  }
+
+  private telemetryStall() {
+    const f = X.clone().applyQuaternion(this.q), u = Y.clone().applyQuaternion(this.q);
+    const V = this.vel.length();
+    if (V < 1) return 0;
+    return smoothstep(ASTALL - 0.03, ASTALL + 0.05, Math.atan2(-this.vel.dot(u), this.vel.dot(f)));
   }
 
   telemetry(): Telemetry {
     const f = X.clone().applyQuaternion(this.q), r = Z.clone().applyQuaternion(this.q), u = Y.clone().applyQuaternion(this.q);
     const head = Math.atan2(f.z, f.x);
     const hx = this.home.x - this.pos.x, hz = this.home.z - this.pos.z;
-    const speed = this.kind === 'plane' ? this.speed : this.vel.length();
+    const V = this.vel.length();
+    const aoa = V > 1 ? Math.atan2(-this.vel.dot(u), this.vel.dot(f)) : 0;
+    const plane = this.kind === 'plane';
     return {
-      kind: this.kind, speed, vs: this.vel.y, alt: this.pos.y, agl: this.pos.y - Math.max(this.groundUnder(), 0),
+      kind: this.kind, speed: V, vs: this.vel.y, alt: this.pos.y, agl: this.pos.y - Math.max(this.groundUnder(), 0),
       heading: wrapPi(head - this.north + Math.PI / 2), pitch: Math.asin(clamp(f.y, -1, 1)), roll: Math.atan2(-r.y, u.y),
-      power: this.power, time: this.flown, home: Math.hypot(hx, hz), homeDir: wrapPi(Math.atan2(hz, hx) - head),
-      crashed: this.crash > 0, ground: this.onGround, stall: this.kind === 'plane' && !this.onGround && this.speed < 25,
+      turn: this.turnRate, slip: this.ball, aoa,
+      power: this.power,
+      rpm: plane ? 500 + 1800 * Math.sqrt(this.power) + 5 * V : 100 - 2.5 * (this.power - 0.5) + 0.3 * Math.sin(this.t * 0.7),
+      torque: plane ? 0 : clamp(18 + 84 * this.power * (1 - 0.1 * smoothstep(6, 20, Math.hypot(this.vel.x, this.vel.z))), 0, 125),
+      time: this.flown, home: Math.hypot(hx, hz), homeDir: wrapPi(Math.atan2(hz, hx) - head), link: this.link,
+      crashed: this.crash > 0, ground: this.onGround, stall: plane && !this.onGround && aoa > ASTALL - 0.03,
     };
   }
 }

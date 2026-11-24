@@ -28,12 +28,18 @@ const FRAG = /* glsl */ `
 
 export class Streaks {
   readonly mesh: THREE.Mesh;
-  private readonly u = { uCentre: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3(44, 4.5, 44) },
+  private readonly u = { uCentre: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3() },
     uTrail: { value: new THREE.Vector3() }, uPx: { value: new THREE.Vector2(0.002, 0.002) }, uCol: { value: new THREE.Color() },
     uOpacity: { value: 0 } };
 
-  // dom: the canvas, for the width in CSS pixels
-  constructor(scene: THREE.Scene, n: number, private readonly dom: HTMLElement) {
+  range: [number, number] = [12, 30];   // m/s: from nothing to full
+  strength = 0.42;
+  lift = 1.7;                           // the box's centre over the vehicle
+  trail = 0.09;                         // seconds of exposure
+
+  // dom: the canvas, for the width in CSS pixels; box: the air round the camera they fill (m)
+  constructor(scene: THREE.Scene, n: number, private readonly dom: HTMLElement, box: [number, number, number] = [44, 4.5, 44]) {
+    this.u.uBox.value.set(...box);
     const seed = new Float32Array(n * 16), corner = new Float32Array(n * 8), index: number[] = [];
     for (let i = 0; i < n; i++) {
       const s = [Math.random(), Math.random(), Math.random(), Math.random()];
@@ -58,12 +64,12 @@ export class Streaks {
 
   // where the vehicle is and how it moves (m/s), the boost's share 0..1
   update(camera: THREE.PerspectiveCamera, pos: THREE.Vector3, vel: THREE.Vector3, over: number, night: number) {
-    const s = vel.length(), o = smoothstep(12, 30, s) * 0.42 + over * 0.15;
+    const s = vel.length(), o = smoothstep(this.range[0], this.range[1], s) * this.strength + over * 0.15;
     this.u.uOpacity.value = o * (1 - 0.55 * night);
     this.mesh.visible = o > 0.005;
     if (!this.mesh.visible) return;
-    this.u.uCentre.value.set(camera.position.x, pos.y + 1.7, camera.position.z);
-    this.u.uTrail.value.copy(vel).multiplyScalar(0.09);
+    this.u.uCentre.value.set(camera.position.x, pos.y + this.lift, camera.position.z);
+    this.u.uTrail.value.copy(vel).multiplyScalar(this.trail);
     this.u.uPx.value.set(2 / Math.max(this.dom.clientWidth, 1), 2 / Math.max(this.dom.clientHeight, 1));
     this.u.uCol.value.setRGB(0.93, 0.95, 0.98);
   }

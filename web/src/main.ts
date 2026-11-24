@@ -34,6 +34,7 @@ import { Stats } from './ui/stats';
 import { clock } from './ui/time';
 import { Tutorial } from './ui/tutorial';
 import { FlyHud } from './ui/flyhud';
+import { Feed } from './engine/feed';
 import { Ui, type Mode } from './ui/ui';
 import { VehiclePicker } from './ui/vehicles';
 import { $, clamp, isTouch } from './util';
@@ -115,7 +116,7 @@ map.floor = (x, z) => world.groundAt(x, z) ?? 8;
 map.bounds = [-400, -400, meta.W * meta.vox + 400, meta.D * meta.vox + 400];
 const walker = new Walker(camera, world, input, renderer.domElement);
 const car = new Car(scene, camera, world, input, renderer.domElement, weather.levels);
-const flyer = new Flyer(scene, camera, world, input);
+const flyer = new Flyer(scene, camera, world, input, renderer.domElement);
 flyer.north = meta.theta_deg * Math.PI / 180;
 flyer.bounds = [-400, -400, meta.W * meta.vox + 400, meta.D * meta.vox + 400];
 
@@ -571,7 +572,7 @@ function frame(now: number) {
   locate.update(camera, vw, vh);
   if (shown) ui.tiles(tiles.loading, tiles.meshed);
   else loader?.progress(0.2 + 0.8 * (tiles.meshed / Math.max(tiles.meshed + tiles.loading, 1)), T().loadingCity(tiles.meshed, tiles.meshed + tiles.loading));
-  renderer.render(scene, camera);
+  draw();
   if (mode === 'fly') flyHud.draw();
   stats?.frame(now, renderer.info, tiles, ` · lite ${lite.level}` + (lite.crashed ? `\nlast start died after ${lite.crashed.secs} s: ${lite.crashed.mode}, ${lite.crashed.mb} MB` : ''));
   if (!shown && tiles.shown > 0 && tiles.loading < 4) {
@@ -598,10 +599,17 @@ function frame(now: number) {
 }
 renderer.setAnimationLoop(frame);
 
+// the drone is seen through its analogue video feed (engine/feed.ts)
+let feed: Feed | null = null;
+function draw() {
+  if (mode === 'fly' && flyer.kind === 'drone' && !qs.has('nofeed')) (feed ??= new Feed()).render(renderer, scene, camera, look.time.value, flyer.breakup);
+  else renderer.render(scene, camera);
+}
+
 window.__three = {
   renderer, scene, camera, tiles, world, sky, car, walker, vehicles, flyer, flyHud,
   lod: { get loading() { return tiles.loading; }, get shown() { return tiles.shown; }, update: () => tiles.update(camera, vh, true) },
-  render: () => renderer.render(scene, camera),
+  render: draw,
   setMode, goBar, frame, map, tutorial, menu, streetSpot, groundLoaded,
   jump: (k: string) => { const v = meta.views[k]; if (v) map.jump(v.pos, v.target); },
   weather, live,
