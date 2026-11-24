@@ -5,7 +5,7 @@
 // trees stay as they are and only the lawns follow the months; without phenology.json nothing changes.
 import * as THREE from 'three';
 import type { Meta } from '../meta';
-import { CLASSES, type Season } from './material';
+import { CLASSES, dropData, type Season } from './material';
 
 interface Phase { day: number; sd: number }
 interface Class { species: string; leaf: Phase | null; colour: Phase | null; fall: Phase | null; autumn: string | null }
@@ -32,12 +32,14 @@ export async function loadSeasons(meta: Meta, season: Season): Promise<Phenology
     if (!r.ok || !r.body) throw new Error(String(r.status));
     const a = new Uint8Array(await gunzip(r)), n = f.cols * f.rows;
     if (a.length < 2 * n) throw new Error(`foliage.bin: ${a.length} bytes, ${2 * n} expected`);
-    const rg = new Uint8Array(2 * n);
-    for (let i = 0; i < n; i++) { rg[2 * i] = a[i]; rg[2 * i + 1] = a[n + i]; }
-    const tex = new THREE.DataTexture(rg, f.cols, f.rows, THREE.RGFormat);
+    // one byte a cell, in place: the class (0-15) and four bits of the tree's byte, enough to tell neighbours apart;
+    // the two bytes took 30 MB on the GPU and as much here
+    for (let i = 0; i < n; i++) a[i] = (a[i] & 15) | ((a[n + i] & 15) << 4);
+    const tex = new THREE.DataTexture(a.subarray(0, n), f.cols, f.rows, THREE.RedFormat);
     tex.magFilter = tex.minFilter = THREE.NearestFilter;
-    tex.unpackAlignment = 2;
+    tex.unpackAlignment = 1;
     tex.needsUpdate = true;
+    tex.onUpdate = () => dropData(tex);
     season.map.value = tex;
     for (let i = 0; i < CLASSES; i++) {
       const c = ph.classes[i];

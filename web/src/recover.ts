@@ -12,13 +12,14 @@ export interface Lite { level: number; crashed: Crumb | null; dpr: number; shado
 const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k: string, v: string | null) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
 
-// per level: the most device pixels per CSS pixel, the shadow map's size (0: no shadows), megabytes of tile geometry,
-// and how many times coarser the detail falls off
+// per level: the most device pixels per CSS pixel, the shadow map's size (0: no shadows), megabytes of tiles (16
+// bytes a face, and the columns under the walker; a third of what the same detail took at 48 bytes a face), and how
+// many times coarser the detail falls off
 const LEVELS = [
-  { dpr: 1.5, shadow: 2048, budget: 160, err: 1 },
-  { dpr: 1.25, shadow: 1024, budget: 110, err: 1.2 },
-  { dpr: 1, shadow: 1024, budget: 75, err: 1.45 },
-  { dpr: 1, shadow: 0, budget: 50, err: 1.8 },
+  { dpr: 1.5, shadow: 2048, budget: 60, err: 1 },
+  { dpr: 1.25, shadow: 1024, budget: 42, err: 1.2 },
+  { dpr: 1, shadow: 1024, budget: 29, err: 1.45 },
+  { dpr: 1, shadow: 0, budget: 20, err: 1.8 },
 ];
 
 export function startLite(qs: URLSearchParams, phone: boolean): Lite {

@@ -84,6 +84,9 @@ renderer.setSize(vw, vh, false);
 const shadowSize = +(qs.get('shadow') ?? (light ? lite.shadow : 4096));
 renderer.shadowMap.enabled = shadowSize > 0;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+// the shadow map is drawn when what it shows changed, not every frame (frame(), below)
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 $('#app').appendChild(renderer.domElement);
@@ -97,8 +100,8 @@ const camera = new THREE.PerspectiveCamera(40, vw / vh, 0.3, 40000);
 const { mat, fading, look, depth, lamps } = makeMaterial(meta, light);
 lampLit(lamps);
 const tiles = new Tiles(meta, mat, fading);
-if (depth) {  // trees that go bare: their trunks and branches, and what stands behind them, keep their faces
-  tiles.depth = depth;
+tiles.depth = depth;
+if (meta.foliage) {  // trees that go bare: their trunks and branches, and what stands behind them, keep their faces
   tiles.see = Uint8Array.from(meta.palette, (p) => +(p[3] === MAT.LEAF));
 }
 // phones: a little coarser and quicker to forget tiles. An iPhone reloads a page that takes too much memory, and the
@@ -512,6 +515,7 @@ function fit() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h, false);
+  redraw = true;
 }
 new ResizeObserver(fit).observe(app);
 addEventListener('resize', fit);
@@ -521,6 +525,15 @@ const first = meta.views[qs.get('view') ?? ''] ?? meta.views.overview;
 map.jump(first.pos, first.target);
 ui.setMode('map');
 let last = performance.now(), shown = false, sunUp = -1;
+// What was last drawn. The shadow map is drawn again only when the sun, its square or the tiles changed (or something
+// in it moves: a vehicle, an aircraft). And a still map with nothing going on is drawn 30 times a second, not 60 or
+// 120: only the water moves then, and a phone left on the map stays cool.
+const IDLE_MS = 26, ACTIVE_MS = 1000;
+const drawn = { tiles: -1, season: -1, still: false, cam: new Float64Array(16), at: 0 };
+let active = performance.now(), redraw = true;
+for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart', 'touchmove']) {
+  addEventListener(ev, () => { active = performance.now(); }, { capture: true, passive: true });
+}
 
 function frame(now: number) {
   const dt = clamp((now - last) / 1000, 0, 0.1);
@@ -564,15 +577,30 @@ function frame(now: number) {
   if (live.on) liveClock();
   weather.update(dt, camera, vw, vh, renderer.getPixelRatio(), sky.night, look);
   sky.set(hour, weather.levels, renderer);
-  if (+sky.sun.visible !== sunUp) { sunUp = +sky.sun.visible; tiles.warm(renderer, camera, scene); }
-  sky.follow(focus, radius);
+  const still = mode === 'map' || mode === 'walk';  // nothing that casts a shadow moves
+  let moved = sky.follow(focus, radius, still);
+  if (+sky.sun.visible !== sunUp) { sunUp = +sky.sun.visible; moved = true; tiles.warm(renderer, camera, scene); }
+  const seasonNow = look.season.day.value + 1000 * look.season.on.value;
+  if (moved || !still || !drawn.still || tiles.changed !== drawn.tiles || seasonNow !== drawn.season) {
+    renderer.shadowMap.needsUpdate = moved = true;
+    drawn.tiles = tiles.changed;
+    drawn.season = seasonNow;
+    drawn.still = still;
+  }
+  const cm = camera.matrixWorld.elements;
+  for (let i = 0; i < 16; i++) if (cm[i] !== drawn.cam[i]) { drawn.cam[i] = cm[i]; moved = true; }
   sky.dome.position.copy(camera.position);
   labels.update(camera, vw, vh, mode === 'map' ? 1 : 0.3);
   promo.update(camera, vw, vh);
   locate.update(camera, vw, vh);
   if (shown) ui.tiles(tiles.loading, tiles.meshed);
   else loader?.progress(0.2 + 0.8 * (tiles.meshed / Math.max(tiles.meshed + tiles.loading, 1)), T().loadingCity(tiles.meshed, tiles.meshed + tiles.loading));
-  draw();
+  if (redraw || moved || mode !== 'map' || !shown || now - drawn.at >= IDLE_MS || now - active < ACTIVE_MS || tiles.loading > 0 || tiles.fades > 0
+    || weather.levels.rain > 0 || weather.levels.snow > 0) {
+    redraw = false;
+    drawn.at = now;
+    draw();
+  }
   if (mode === 'fly') flyHud.draw();
   stats?.frame(now, renderer.info, tiles, ` · lite ${lite.level}` + (lite.crashed ? `\nlast start died after ${lite.crashed.secs} s: ${lite.crashed.mode}, ${lite.crashed.mb} MB` : ''));
   if (!shown && tiles.shown > 0 && tiles.loading < 4) {
@@ -610,7 +638,7 @@ window.__three = {
   renderer, scene, camera, tiles, world, sky, car, walker, vehicles, flyer, flyHud,
   lod: { get loading() { return tiles.loading; }, get shown() { return tiles.shown; }, update: () => tiles.update(camera, vh, true) },
   render: draw,
-  setMode, goBar, frame, map, tutorial, menu, streetSpot, groundLoaded,
+  setMode, goBar, frame, map, tutorial, menu, streetSpot, groundLoaded, look,
   jump: (k: string) => { const v = meta.views[k]; if (v) map.jump(v.pos, v.target); },
   weather, live,
   setHour: (h: number) => { manual(); hour = h; ui.setHour(h); },

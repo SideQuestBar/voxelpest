@@ -105,6 +105,8 @@ export class Sky {
   private readonly east: THREE.Vector2;
   private readonly north: THREE.Vector2;
   private shadowR = 400;
+  private readonly shadowDir = new THREE.Vector3(0, 1, 0);  // the light's direction the shadow map was last drawn for
+  private readonly shadowAt = new THREE.Vector3(NaN, 0, 0);
 
   constructor(private readonly scene: THREE.Scene, private readonly look: Look, meta: Meta, shadowSize: number) {
     const th = meta.theta_deg * rad;
@@ -185,22 +187,30 @@ export class Sky {
     this.look.lit.value = h >= 17 || h < 1 ? 0.55 : h < 5 ? 0.14 : h < 9 ? 0.32 : 0.25;
   }
 
-  // the shadows cover a square round what the camera looks at, wider the further away it is
-  follow(target: THREE.Vector3, radius: number) {
+  // The shadows cover a square round what the camera looks at, wider the further away it is. The square moves in
+  // steps (a texel; `coarse`: a 64th of its width, for views nothing moves in) and the light in steps of a twentieth
+  // of a degree, and this says whether either did: the shadow map is only drawn again then (main.ts), not on every
+  // frame of a still or slowly moving view.
+  follow(target: THREE.Vector3, radius: number, coarse = false): boolean {
     const r = clamp(radius, 60, 2200);
+    let moved = false;
     if (Math.abs(r - this.shadowR) / this.shadowR > 0.15) this.shadowR = r;
     const R = this.shadowR, cam = this.sun.shadow.camera;
     if (cam.right !== R) {
       cam.left = -R; cam.right = R; cam.top = R; cam.bottom = -R;
       cam.updateProjectionMatrix();
+      moved = true;
     }
-    const texel = (2 * R) / this.sun.shadow.mapSize.x;
-    const t = target.clone();
-    t.x = Math.round(t.x / texel) * texel; t.z = Math.round(t.z / texel) * texel;
+    const size = this.sun.shadow.mapSize.x, grid = ((2 * R) / size) * (coarse ? Math.max(size / 64, 1) : 1), at = this.shadowAt;
+    const x = Math.round(target.x / grid) * grid, z = Math.round(target.z / grid) * grid;
+    // the height too: over the hills the square would slide off along the light otherwise
+    if (x !== at.x || z !== at.z || Math.abs(target.y - at.y) > 4 * grid) { at.set(x, target.y, z); moved = true; }
     const light = this.lightDir.y > 0.02 ? this.lightDir : UP;
-    this.sun.target.position.copy(t);
-    this.sun.position.copy(t).addScaledVector(light, 3000);
-    this.moon.target.position.copy(t);
-    this.moon.position.copy(t).addScaledVector(this.u.uMoon.value, 3000);
+    if (this.shadowDir.dot(light) < 0.9999996) { this.shadowDir.copy(light); moved = true; }
+    this.sun.target.position.copy(at);
+    this.sun.position.copy(at).addScaledVector(this.shadowDir, 3000);
+    this.moon.target.position.copy(at);
+    this.moon.position.copy(at).addScaledVector(this.u.uMoon.value, 3000);
+    return moved;
   }
 }

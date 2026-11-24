@@ -2,6 +2,7 @@
 // painted with a vertex colour and collected per material; build() merges each material's parts into one mesh, so a
 // whole vehicle costs a handful of draw calls. Units are metres: x forward, y up, z to the right.
 import * as THREE from 'three';
+import { LAMP_GLSL } from '../engine/material';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type P2 = [number, number];
@@ -51,7 +52,7 @@ export function lit<M extends THREE.Material>(m: M): M {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vLampW; uniform sampler2D uLamps; uniform vec2 uMapSize; uniform float uNight;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        if (uNight > 0.0) totalEmissiveRadiance += diffuseColor.rgb * texture2D(uLamps, vLampW.xz / uMapSize).rgb * uNight * 2.0;`);
+        if (uNight > 0.0) totalEmissiveRadiance += diffuseColor.rgb * ${LAMP_GLSL} * texture2D(uLamps, vLampW.xz / uMapSize).r * uNight * 2.0;`);
   };
   m.needsUpdate = true;
   return m;

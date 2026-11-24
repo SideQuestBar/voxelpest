@@ -6,17 +6,21 @@
 // levels "detail" voxels (x, y, z, palette) uint16 at full size: thin things that downsampling would lose.
 // The meshing below is this project's own: faces come straight from the runs. A column's top and bottom faces are
 // merged into rectangles per height; its side faces are the stretches of its runs that the neighbouring column does
-// not cover, merged along the row. Corners get ambient occlusion from the voxels around them.
+// not cover, merged along the row. Corners get ambient occlusion from the voxels around them. Every face is a
+// rectangle, sent as one instance of a quad.
 
 // see: palette ids (leaves) that hide no other voxel's faces, when trees go bare through the year (engine/foliage.ts):
 // the trunk and branches inside a crown, a wall behind a tree, keep their faces
 export interface MeshJob { id: number; url: string; N: number; s: number; tx: number; ty: number; keep: boolean; see?: Uint8Array }
-export interface Cols { counts: Uint16Array; off: Uint32Array; runs: Uint16Array; ground: Uint8Array }
+export interface Cols { off: Uint32Array; runs: Uint16Array; ground: Uint8Array }
+// A quad is one instance, 16 bytes (four vertices of 12 bytes each before: a third of the memory, on the GPU and on
+// the way there). Its plane's axes by face: 0, 1 (-x, +x): u up, v along z; 2, 3 (-z, +z): u along x, v up; 4, 5
+// (down, up): u along x, v along z. The shader (material.ts, quadCorner) makes the four corners.
 export interface MeshResult {
   id: number;
-  pos: Int16Array;   // voxels: x (column), y (up), z (row)
-  va: Uint8Array;    // per vertex: face (0 -x, 1 +x, 2 -z, 3 +z, 4 down, 5 up), occlusion 0-3, ground (m), level
-  pal: Uint16Array;  // palette index
+  qa: Int16Array;    // per quad: its low corner in voxels, x (column), y (up), z (row), and the palette index
+  qb: Uint16Array;   // its size along u and v, voxels
+  qc: Uint8Array;    // face | 8 if split along the other diagonal, the corners' occlusion (2 bits each), ground (m), level
   quads: number;
   top: number;       // highest voxel, for the bounding box
   cols: Cols | null; // the columns themselves, for walking and driving (level 1 only)
@@ -26,27 +30,24 @@ export interface MeshResult {
 class Out {
   cap = 4096;
   n = 0;
-  pos = new Int16Array(this.cap * 12);
-  va = new Uint8Array(this.cap * 16);
-  pal = new Uint16Array(this.cap * 4);
+  qa = new Int16Array(this.cap * 4);
+  qb = new Uint16Array(this.cap * 2);
+  qc = new Uint8Array(this.cap * 4);
 
-  quad(c: number[], face: number, ao: number, ground: number, s: number, pal: number) {
+  // ao: the corners' occlusion in the face's corner order (material.ts), 255 for none
+  quad(x: number, y: number, z: number, du: number, dv: number, face: number, ao: number, ground: number, s: number, pal: number) {
     if (this.n === this.cap) {
       this.cap *= 2;
-      const p = new Int16Array(this.cap * 12); p.set(this.pos); this.pos = p;
-      const v = new Uint8Array(this.cap * 16); v.set(this.va); this.va = v;
-      const q = new Uint16Array(this.cap * 4); q.set(this.pal); this.pal = q;
+      const a = new Int16Array(this.cap * 4); a.set(this.qa); this.qa = a;
+      const b = new Uint16Array(this.cap * 2); b.set(this.qb); this.qb = b;
+      const c = new Uint8Array(this.cap * 4); c.set(this.qc); this.qc = c;
     }
-    const a = [ao & 3, (ao >> 2) & 3, (ao >> 4) & 3, (ao >> 6) & 3];
+    const n = this.n++, qa = this.qa, qb = this.qb, qc = this.qc;
+    qa[n * 4] = x; qa[n * 4 + 1] = y; qa[n * 4 + 2] = z; qa[n * 4 + 3] = pal;
+    qb[n * 2] = du; qb[n * 2 + 1] = dv;
     // split along the brighter diagonal, so occlusion shades smoothly
-    const order = a[0] + a[2] < a[1] + a[3] ? [1, 2, 3, 0] : [0, 1, 2, 3];
-    for (let k = 0; k < 4; k++) {
-      const i = order[k], v = this.n * 4 + k;
-      this.pos[v * 3] = c[i * 3]; this.pos[v * 3 + 1] = c[i * 3 + 1]; this.pos[v * 3 + 2] = c[i * 3 + 2];
-      this.va[v * 4] = face; this.va[v * 4 + 1] = a[i]; this.va[v * 4 + 2] = ground; this.va[v * 4 + 3] = s;
-      this.pal[v] = pal;
-    }
-    this.n++;
+    qc[n * 4] = (ao & 3) + ((ao >> 4) & 3) < ((ao >> 2) & 3) + ((ao >> 6) & 3) ? face | 8 : face;
+    qc[n * 4 + 1] = ao; qc[n * 4 + 2] = ground; qc[n * 4 + 3] = s;
   }
 }
 
@@ -59,7 +60,7 @@ function mesh(buf: ArrayBuffer, job: MeshJob): MeshResult {
   // Views of the tile's bytes, copies only of what goes back with the mesh, and one output kept between tiles: a
   // worker's garbage is collected late in Safari, and tile after tile it grew to over a gigabyte on an iPhone
   const view = !job.keep && n2 % 2 === 0;
-  const counts = view ? new Uint16Array(buf, 0, n2) : new Uint16Array(buf.slice(0, n2 * 2));
+  const counts = n2 % 2 === 0 ? new Uint16Array(buf, 0, n2) : new Uint16Array(buf.slice(0, n2 * 2));
   const ground = view ? new Uint8Array(buf, n2 * 2, n2) : new Uint8Array(buf.slice(n2 * 2, n2 * 3));
   if (!scratchOff || scratchOff.length !== n2 + 1) scratchOff = new Uint32Array(n2 + 1);
   const off = job.keep ? new Uint32Array(n2 + 1) : scratchOff;
@@ -113,9 +114,7 @@ function mesh(buf: ArrayBuffer, job: MeshJob): MeshResult {
       const Y = z * s;
       const open = new Map<number, number[]>(); // (x0, x1, palette) -> [x0, x1, y0, y1, palette, ground]
       const emit = (q: number[], ao: number) => {
-        const x0 = X0 + q[0] * s, x1 = X0 + q[1] * s, z0 = Z0 + q[2] * s, z1 = Z0 + q[3] * s;
-        const c = up ? [x0, Y, z0, x0, Y, z1, x1, Y, z1, x1, Y, z0] : [x0, Y, z0, x1, Y, z0, x1, Y, z1, x0, Y, z1];
-        out.quad(c, up ? 5 : 4, ao, q[5], s, q[4]);
+        out.quad(X0 + q[0] * s, Y, Z0 + q[2] * s, (q[1] - q[0]) * s, (q[3] - q[2]) * s, up ? 5 : 4, ao, q[5], s, q[4]);
       };
       for (let i = 0; i < a.length;) {
         const x = a[i], y = a[i + 1], p = a[i + 2], ao = a[i + 3];
@@ -151,15 +150,8 @@ function mesh(buf: ArrayBuffer, job: MeshJob): MeshResult {
       const open = new Map<number, number[]>(); // (a, b, palette, ao, ground) -> [u0, u1, a, b, palette, ao, ground]
       const emit = (q: number[]) => {
         const [u0, u1, a, b, pal, ao, g] = q, za = a * s, zb = b * s;
-        let c: number[];
-        if (!alongX) {
-          const xp = X0 + (p + (dx > 0 ? 1 : 0)) * s, y0 = Z0 + u0 * s, y1 = Z0 + u1 * s;
-          c = dx > 0 ? [xp, za, y0, xp, zb, y0, xp, zb, y1, xp, za, y1] : [xp, za, y0, xp, za, y1, xp, zb, y1, xp, zb, y0];
-        } else {
-          const zp = Z0 + (p + (dy > 0 ? 1 : 0)) * s, x0 = X0 + u0 * s, x1 = X0 + u1 * s;
-          c = dy > 0 ? [x0, za, zp, x1, za, zp, x1, zb, zp, x0, zb, zp] : [x0, za, zp, x0, zb, zp, x1, zb, zp, x1, za, zp];
-        }
-        out.quad(c, face, ao, g, s, pal);
+        if (!alongX) out.quad(X0 + (p + (dx > 0 ? 1 : 0)) * s, za, Z0 + u0 * s, zb - za, (u1 - u0) * s, face, ao, g, s, pal);
+        else out.quad(X0 + u0 * s, za, Z0 + (p + (dy > 0 ? 1 : 0)) * s, (u1 - u0) * s, zb - za, face, ao, g, s, pal);
       };
       for (let u = 0; u < N; u++) {
         const x = alongX ? u : p, y = alongX ? p : u, fx = x + dx, fy = y + dy;
@@ -217,24 +209,25 @@ function mesh(buf: ArrayBuffer, job: MeshJob): MeshResult {
       const g = ground[col(Math.min(N - 1, Math.floor(x / s)), Math.min(N - 1, Math.floor(y / s)))];
       const ax = X0 + x, bx = ax + 1, az = Z0 + y, bz = az + 1;
       if (z1 > top * s) top = Math.ceil(z1 / s);
-      out.quad([ax, z0, az, ax, z0, bz, ax, z1, bz, ax, z1, az], 0, 255, g, 1, p);
-      out.quad([bx, z0, az, bx, z1, az, bx, z1, bz, bx, z0, bz], 1, 255, g, 1, p);
-      out.quad([ax, z0, az, ax, z1, az, bx, z1, az, bx, z0, az], 2, 255, g, 1, p);
-      out.quad([ax, z0, bz, bx, z0, bz, bx, z1, bz, ax, z1, bz], 3, 255, g, 1, p);
-      out.quad([ax, z0, az, bx, z0, az, bx, z0, bz, ax, z0, bz], 4, 255, g, 1, p);
-      out.quad([ax, z1, az, ax, z1, bz, bx, z1, bz, bx, z1, az], 5, 255, g, 1, p);
+      const h = z1 - z0;
+      out.quad(ax, z0, az, h, 1, 0, 255, g, 1, p);
+      out.quad(bx, z0, az, h, 1, 1, 255, g, 1, p);
+      out.quad(ax, z0, az, 1, h, 2, 255, g, 1, p);
+      out.quad(ax, z0, bz, 1, h, 3, 255, g, 1, p);
+      out.quad(ax, z0, az, 1, 1, 4, 255, g, 1, p);
+      out.quad(ax, z1, az, 1, 1, 5, 255, g, 1, p);
     }
   }
   const n = out.n;
   if (out.cap > 1 << 18) scratchOut = null;  // a rare huge tile's output isn't kept
   return {
-    id: job.id, pos: out.pos.slice(0, n * 12), va: out.va.slice(0, n * 16), pal: out.pal.slice(0, n * 4), quads: n,
-    top: top * s, cols: job.keep ? { counts, off, runs, ground } : null,
+    id: job.id, qa: out.qa.slice(0, n * 4), qb: out.qb.slice(0, n * 2), qc: out.qc.slice(0, n * 4), quads: n,
+    top: top * s, cols: job.keep ? { off, runs, ground } : null,
   };
 }
 
 const empty = (id: number, error?: string): MeshResult =>
-  ({ id, pos: new Int16Array(0), va: new Uint8Array(0), pal: new Uint16Array(0), quads: 0, top: 0, cols: null, error });
+  ({ id, qa: new Int16Array(0), qb: new Uint16Array(0), qc: new Uint8Array(0), quads: 0, top: 0, cols: null, error });
 
 self.onmessage = async (e: MessageEvent<MeshJob>) => {
   const job = e.data;
@@ -250,7 +243,7 @@ self.onmessage = async (e: MessageEvent<MeshJob>) => {
   } catch (err) {
     res = empty(job.id, String(err));
   }
-  const tr: Transferable[] = [res.pos.buffer, res.va.buffer, res.pal.buffer];
-  if (res.cols) tr.push(res.cols.counts.buffer, res.cols.off.buffer, res.cols.runs.buffer, res.cols.ground.buffer);
+  const tr: Transferable[] = [res.qa.buffer, res.qb.buffer, res.qc.buffer];
+  if (res.cols) tr.push(res.cols.off.buffer, res.cols.runs.buffer, res.cols.ground.buffer);
   (self as unknown as Worker).postMessage(res, tr);
 };

@@ -9,6 +9,7 @@ import type { Cols, MeshJob, MeshResult } from './mesher.worker';
 import MesherWorker from './mesher.worker?worker';
 
 const FADE_MS = 450;
+const QUAD_BYTES = 16;  // a face on the GPU (mesher.worker.ts)
 
 function dropArray(this: THREE.BufferAttribute) { (this as { array: unknown }).array = null; }
 
@@ -22,6 +23,7 @@ export interface Tile {
   wanted: number;
   mesh: THREE.Mesh | null;
   cols: Cols | null;
+  bytes: number;   // its faces on the GPU and its columns here
   waiters: (() => void)[];
 }
 
@@ -34,13 +36,15 @@ export class Tiles {
   readonly tiles = new Map<string, Tile>();
   err = 2.2;
   keepMs = 10000;  // how long a tile nobody shows is kept
-  // Bytes of geometry to stay under (phones: iOS kills a page that holds too much, "a problem repeatedly occurred").
+  // Bytes of tiles (faces on the GPU, the finest tiles' columns) to stay under (phones: iOS kills a page that holds too much, "a problem repeatedly occurred").
   // Over it, tiles nobody shows go at once and the detail falls off sooner with distance (`tight` scales `err`).
   budget = Infinity;
   bytes = 0;
   private tight = 1;
   loading = 0;
   shown = 0;
+  changed = 0;                             // counts every change in what is drawn (main.ts: the shadow map is redrawn)
+  get fades() { return this.fading.size; } // tiles dissolving now
   meshed = 0;                              // tiles meshed since the start, for the loading screen and the tile bar
   see: Uint8Array | null = null;           // seasons (engine/foliage.ts): leaves hide no other faces (mesher.worker.ts)
   depth: THREE.Material | null = null;     // and the shadow pass drops bare leaves (material.ts)
@@ -48,8 +52,9 @@ export class Tiles {
   recycle = Infinity;                      // a worker is replaced after this many tiles (phones: its heap goes with it)
   private readonly jobs = new Map<number, Tile>();
   private nextId = 1;
-  private index: THREE.BufferAttribute | null = null;   // the quads' index, shared by every tile (indexFor)
-  private readonly users = new Map<THREE.BufferAttribute, number>();  // tiles drawing with each index (free)
+  // the quad every tile draws its faces as instances of (mesher.worker.ts): four corners, numbered in `position`
+  private readonly corners = new THREE.BufferAttribute(new Float32Array([0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0]), 3);
+  private readonly index = new THREE.BufferAttribute(new Uint16Array([0, 1, 2, 0, 2, 3]), 1);
   private readonly frustum = new THREE.Frustum();
   private readonly box = new THREE.Box3();
   private readonly mtx = new THREE.Matrix4();
@@ -58,8 +63,8 @@ export class Tiles {
   private readonly fading = new Map<Tile, number>();  // tiles on their way out, since when
   private probe: THREE.Mesh | null = null;
 
-  // `fades`: the material at rising shares of pixels dropped (material.ts)
-  constructor(private readonly meta: Meta, private readonly material: THREE.Material, private readonly fades: THREE.Material[] = []) {
+  // `fadeMats`: the material at rising shares of pixels dropped (material.ts)
+  constructor(private readonly meta: Meta, private readonly material: THREE.Material, private readonly fadeMats: THREE.Material[] = []) {
     this.N = meta.tiles.N;
     this.query = meta.tiles.v ? `?v=${encodeURIComponent(meta.tiles.v)}` : '';
     this.levels = meta.tiles.levels.map((l) => l.s).sort((a, b) => b - a);
@@ -82,7 +87,7 @@ export class Tiles {
     const key = this.key(s, tx, ty);
     let t = this.tiles.get(key);
     if (!t) {
-      t = { key, s, tx, ty, state: 'new', prio: 0, wanted: 0, mesh: null, cols: null, waiters: [] };
+      t = { key, s, tx, ty, state: 'new', prio: 0, wanted: 0, mesh: null, cols: null, bytes: 0, waiters: [] };
       this.tiles.set(key, t);
     }
     return t;
@@ -179,21 +184,26 @@ export class Tiles {
   private show(t: Tile, on: boolean, now: number) {
     const m = t.mesh!;
     if (on) {
-      if (this.fading.delete(t)) this.solid(m);
+      if (this.fading.delete(t)) { this.solid(m); this.changed++; }
+      if (!m.visible) this.changed++;
       m.visible = true;
-    } else if (m.visible && this.fades.length && !this.fading.has(t)) {
+    } else if (m.visible && this.fadeMats.length && !this.fading.has(t)) {
       this.fading.set(t, now);
       m.renderOrder = 1;
       m.castShadow = false;
-    } else if (!this.fading.has(t)) m.visible = false;
+      this.changed++;
+    } else if (!this.fading.has(t)) {
+      if (m.visible) this.changed++;
+      m.visible = false;
+    }
   }
 
   // the dissolving tiles' program, compiled ahead (at the start, and when the lights change: the sun setting), so the
   // first tile to dissolve after that doesn't stall its frame
   warm(renderer: THREE.WebGLRenderer, camera: THREE.Camera, scene: THREE.Scene) {
-    if (!this.fades.length) return;
+    if (!this.fadeMats.length) return;
     // a geometry like a tile's (three.js keys programs on its attributes, a position among them)
-    this.probe ??= new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Int16Array(3), 3)), this.fades[0]);
+    this.probe ??= new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Int16Array(3), 3)), this.fadeMats[0]);
     // compileAsync only gains anything with KHR_parallel_shader_compile, and without it (Firefox) three.js warns; the
     // driver compiles in the background either way until something asks for the program's status
     if (renderer.extensions.has('KHR_parallel_shader_compile')) renderer.compileAsync(this.probe, camera, scene).catch(() => {});
@@ -203,7 +213,7 @@ export class Tiles {
   private dissolve(now: number) {
     for (const [t, t0] of this.fading) {
       const k = (now - t0) / FADE_MS, m = t.mesh!;
-      if (k < 1) m.material = this.fades[Math.floor(k * this.fades.length)];
+      if (k < 1) m.material = this.fadeMats[Math.floor(k * this.fadeMats.length)];
       else {
         this.fading.delete(t);
         this.solid(m);
@@ -249,6 +259,8 @@ export class Tiles {
       t.state = 'ready';
       this.meshed++;
       t.cols = r.cols;
+      t.bytes = r.quads * QUAD_BYTES + (r.cols ? r.cols.off.byteLength + r.cols.runs.byteLength + r.cols.ground.byteLength : 0);
+      this.bytes += t.bytes;
       if (r.quads > 0) t.mesh = this.makeMesh(t, r);
       for (const w of t.waiters) w();
       t.waiters = [];
@@ -256,30 +268,16 @@ export class Tiles {
     this.pump();
   }
 
-  private indexFor(quads: number) {
-    if (!this.index || this.index.count < quads * 6) {
-      let n = 1 << 14;
-      while (n < quads) n *= 2;
-      const idx = new Uint32Array(n * 6);
-      for (let q = 0; q < n; q++) idx.set([q * 4, q * 4 + 1, q * 4 + 2, q * 4, q * 4 + 2, q * 4 + 3], q * 6);
-      this.index = new THREE.BufferAttribute(idx, 1);
-    }
-    return this.index;
-  }
-
   private makeMesh(t: Tile, r: MeshResult) {
-    const g = new THREE.BufferGeometry();
+    const g = new THREE.InstancedBufferGeometry();
     // once on the GPU the arrays go: nothing reads them again, and they would double the map's memory
-    const attr = (a: Int16Array | Uint8Array | Uint16Array, n: number) => new THREE.BufferAttribute(a, n).onUpload(dropArray);
-    g.setAttribute('position', attr(r.pos, 3));
-    g.setAttribute('va', attr(r.va, 4));
-    g.setAttribute('vp', attr(r.pal, 1));
-    g.userData.bytes = r.quads * 48;
-    this.bytes += g.userData.bytes;
-    const idx = this.indexFor(r.quads);
-    this.users.set(idx, (this.users.get(idx) ?? 0) + 1);
-    g.setIndex(idx);
-    g.setDrawRange(0, r.quads * 6);
+    const attr = (a: Int16Array | Uint8Array | Uint16Array, n: number) => new THREE.InstancedBufferAttribute(a, n).onUpload(dropArray);
+    g.setAttribute('position', this.corners);
+    g.setAttribute('qa', attr(r.qa, 4));
+    g.setAttribute('qb', attr(r.qb, 2));
+    g.setAttribute('qc', attr(r.qc, 4));
+    g.setIndex(this.index);
+    g.instanceCount = r.quads;
     const L = this.N * t.s;
     g.boundingBox = new THREE.Box3(new THREE.Vector3(t.tx * L, 0, t.ty * L), new THREE.Vector3((t.tx + 1) * L, r.top + 2, (t.ty + 1) * L));
     g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
@@ -296,16 +294,15 @@ export class Tiles {
     this.fading.delete(t);
     if (t.mesh) {
       this.group.remove(t.mesh);
-      // three.js deletes a geometry's index buffer with it, and the other tiles' vertex arrays kept pointing at the
-      // deleted one ("drawElementsInstanced: Index buffer not bound": they weren't drawn). The shared index goes only
-      // with the last tile using it, and never while it is the current one.
-      const g = t.mesh.geometry, idx = g.index!, n = (this.users.get(idx) ?? 1) - 1;
-      if (n > 0) this.users.set(idx, n);
-      else this.users.delete(idx);
-      if (n > 0 || idx === this.index) g.setIndex(null);
-      this.bytes -= g.userData.bytes;
+      // three.js deletes a geometry's buffers with it, the corners and the index every tile shares too, and the other
+      // tiles' vertex arrays kept pointing at the deleted ones ("drawElementsInstanced: Index buffer not bound": they
+      // weren't drawn). So the shared ones are taken off first.
+      const g = t.mesh.geometry;
+      g.setIndex(null);
+      g.deleteAttribute('position');
       g.dispose();
     }
+    this.bytes -= t.bytes;
     this.tiles.delete(t.key);
   }
 }

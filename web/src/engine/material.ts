@@ -24,7 +24,7 @@ export const CLASSES = 16;  // FOLIAGE-CONTRACT: 0 none, 1-13 deciduous, 14 coni
 export interface Season {
   day: THREE.IUniform<number>;                // day of the year
   on: THREE.IUniform<number>;                 // 1 once foliage.bin and phenology.json are in
-  map: THREE.IUniform<THREE.Texture>;         // per 2 m cell: class, per-tree byte (RG)
+  map: THREE.IUniform<THREE.Texture>;         // per 2 m cell: class | four bits of its tree's byte << 4 (R)
   date: THREE.IUniform<THREE.Vector4[]>;      // per class: leaf-out, colouring, fall (days), spread; x < 0 evergreen
   col: THREE.IUniform<THREE.Color[]>;         // per class: autumn colour
   grass: THREE.IUniform<THREE.Color[]>;       // per month: a factor on the lawns' green
@@ -40,33 +40,55 @@ function paletteTexture(meta: Meta) {
   return t;
 }
 
-// the street lamps' light on the ground: a soft warm pool round each lamp, 1 / k metres per texel
+// once on the GPU a texture's data goes: nothing reads it again (a lost context reloads the page, main.ts)
+export function dropData(t: THREE.DataTexture) { (t.image as { data: unknown }).data = null; }
+
+// the street lamps' light on the ground: a soft pool round each lamp, 1 / k metres per texel. One byte per texel, the
+// light's strength (LAMP_GLSL its colour): as a canvas in colour it took four times the memory on the GPU, and the
+// canvas as much again.
 function lampTexture(meta: Meta, k: number) {
-  const W = Math.ceil(meta.W * meta.vox * k), D = Math.ceil(meta.D * meta.vox * k);
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = D;
-  const g = cv.getContext('2d')!;
-  g.fillStyle = '#000';
-  g.fillRect(0, 0, W, D);
-  g.globalCompositeOperation = 'lighter';
-  const r = 16 * k;
-  const grad = g.createRadialGradient(0, 0, 0, 0, 0, r);
-  grad.addColorStop(0, 'rgba(255,214,160,0.7)');
-  grad.addColorStop(0.35, 'rgba(255,205,150,0.28)');
-  grad.addColorStop(1, 'rgba(255,200,140,0)');
-  g.fillStyle = grad;
+  const W = Math.ceil(meta.W * meta.vox * k), D = Math.ceil(meta.D * meta.vox * k), r = 16 * k;
+  const data = new Uint8Array(W * D);
   for (const [x, y] of meta.lamps) {
-    g.setTransform(1, 0, 0, 1, x * k, y * k);
-    g.fillRect(-r, -r, 2 * r, 2 * r);
+    const cx = x * k, cy = y * k;
+    for (let j = Math.max(Math.floor(cy - r), 0), j1 = Math.min(Math.ceil(cy + r), D); j < j1; j++) {
+      for (let i = Math.max(Math.floor(cx - r), 0), i1 = Math.min(Math.ceil(cx + r), W); i < i1; i++) {
+        const d = Math.hypot(i + 0.5 - cx, j + 0.5 - cy) / r;
+        if (d >= 1) continue;
+        const a = d < 0.35 ? 0.7 - 1.2 * d : (0.28 * (1 - d)) / 0.65;
+        data[j * W + i] = Math.min(data[j * W + i] + Math.round(a * 255), 255);
+      }
+    }
   }
-  const t = new THREE.CanvasTexture(cv);
-  t.colorSpace = THREE.NoColorSpace;
-  t.flipY = false;
+  const t = new THREE.DataTexture(data, W, D, THREE.RedFormat);
+  t.unpackAlignment = 1;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
+  t.needsUpdate = true;
+  t.onUpdate = () => dropData(t);
   return t;
 }
+// a lamp's light from the texture's strength
+export const LAMP_GLSL = 'vec3(1.0, 0.82, 0.61)';
+
+// A face is an instance of one quad (mesher.worker.ts: qa its low corner and palette index, qb its size along u and v,
+// qc face | 8 if split along the other diagonal, the corners' occlusion, ground, level). quadCorner: this vertex's
+// corner, in the order (u, v) = 00 01 11 10 on faces 0, 2, 5 and 00 10 11 01 on the others (so each faces outwards),
+// starting one corner on when split the other way.
+const QUAD = /* glsl */ `
+  attribute vec4 qa; attribute vec2 qb; attribute vec4 qc;
+  vec3 quadCorner(out int face, out float ao) {
+    int f = int(qc.x + 0.5), i = (int(position.x + 0.5) + (f >> 3)) & 3;
+    face = f & 7;
+    bool hi = i >= 2, mid = i == 1 || i == 2, a = face == 0 || face == 2 || face == 5;
+    ao = float((int(qc.y + 0.5) >> (2 * i)) & 3) / 3.0;
+    return qa.xyz + (face < 2 ? vec3(0., 1., 0.) : vec3(1., 0., 0.)) * (qb.x * float(a ? hi : mid))
+      + (face == 2 || face == 3 ? vec3(0., 1., 0.) : vec3(0., 0., 1.)) * (qb.y * float(a ? mid : hi));
+  }`;
 
 const VERT_PARS = /* glsl */ `
-  attribute vec4 va; attribute float vp;
+  ${QUAD}
   varying vec3 vW; varying float vAo; varying float vGround; flat varying int vPal; flat varying int vFace; flat varying float vS;
   vec3 faceNormal(int f) {
     if (f == 0) return vec3(-1., 0., 0.); if (f == 1) return vec3(1., 0., 0.);
@@ -76,7 +98,7 @@ const VERT_PARS = /* glsl */ `
 
 // The seasons, after warsaw-vibe-voxel's voxelMaterial.ts (MIT, © 2026 Piotr Migdał). foliageAt: a crown cell on
 // uDay: x in leaf (0 bare .. 1), y turned (0 green .. 1 autumn colour), z fresh (spring's light green, 1 .. 0), w the
-// class (0: no tree's crown); each tree on its own date within its class's spread (the per-tree byte). leafGone: a
+// class (0: no tree's crown); each tree on its own date within its class's spread (the per-tree bits). leafGone: a
 // bare voxel drops out, but for a share of twigs, more of them in a far tile's coarse blocks.
 const SEASON = /* glsl */ `
   uniform float uDay; uniform vec3 uGrass[12];
@@ -97,15 +119,17 @@ const SEASON = /* glsl */ `
   #ifdef FOLIAGE
   uniform float uFolOn; uniform sampler2D uFolMap; uniform vec4 uFolDate[${CLASSES}]; uniform vec3 uFolCol[${CLASSES}];
   uniform vec3 uLeafTint; uniform float uFolCell;
+  // a cell's byte: the class in its low four bits, four bits of its tree's in the others (engine/foliage.ts)
+  int folCell(ivec2 c, ivec2 sz) { return int(texelFetch(uFolMap, clamp(c, ivec2(0), sz - 1), 0).r * 255.0 + 0.5); }
   vec4 foliageAt(vec3 cell) {
     ivec2 sz = textureSize(uFolMap, 0), c = ivec2(floor(cell.xz / uFolCell));
-    vec2 f = texelFetch(uFolMap, clamp(c, ivec2(0), sz - 1), 0).rg;
+    int f = folCell(c, sz);
     // a crown's edge spilling into the next cell is still that tree's
-    for (int i = 0; i < 4 && f.r < 0.5 / 255.0; i++) f = texelFetch(uFolMap, clamp(c + ivec2(i == 0 ? 1 : i == 1 ? -1 : 0, i == 2 ? 1 : i == 3 ? -1 : 0), ivec2(0), sz - 1), 0).rg;
-    int cls = int(f.r * 255.0 + 0.5);
+    for (int i = 0; i < 4 && (f & 15) == 0; i++) f = folCell(c + ivec2(i == 0 ? 1 : i == 1 ? -1 : 0, i == 2 ? 1 : i == 3 ? -1 : 0), sz);
+    int cls = f & 15;
     vec4 d = uFolDate[cls];
     if (cls == 0 || d.x < 0.0) return vec4(1.0, 0.0, 0.0, float(cls));
-    float k = f.g * 255.0;
+    float k = float(f >> 4) * 17.0;
     float t = uDay - (fract(k * 0.618034) + fract(k * 0.414214 + 0.3) - 1.0) * 2.45 * d.w;
     float leaf = t < 200.0 ? smoothstep(d.x - 3.0, d.x + 14.0, t) : 1.0 - smoothstep(d.z - 8.0, d.z + 8.0, t);
     float fresh = t < 200.0 ? 1.0 - smoothstep(d.x + 6.0, d.x + 34.0, t) : 0.0;
@@ -285,7 +309,7 @@ const SURFACE = /* glsl */ `
     }
   }
   if (uNight > 0.0) { // the street lamps' light, on what is near the ground
-    vec3 lamp = texture2D(uLamps, vW.xz / uMapSize).rgb;
+    vec3 lamp = ${LAMP_GLSL} * texture2D(uLamps, vW.xz / uMapSize).r;
     float fall = clamp(1.0 - (vW.y - vGround) / 14.0, 0.0, 1.0) * (vFace == 4 ? 0.3 : 1.0);
     gEmit += (m == ${MAT.WATER} ? vec3(0.5) : col) * lamp * fall * uNight * 2.4;
     gEmit += lamp * glint * uNight * 0.5;  // a wet street shines under the lamps
@@ -296,7 +320,7 @@ const SURFACE = /* glsl */ `
 
 // `light`: for phones, the lamp pools at 4 m per texel (a quarter of the memory)
 export function makeMaterial(meta: Meta, light = false) {
-  const blank = new THREE.DataTexture(new Uint8Array(2), 1, 1, THREE.RGFormat);
+  const blank = new THREE.DataTexture(new Uint8Array(1), 1, 1, THREE.RedFormat);
   blank.needsUpdate = true;
   const season: Season = {
     day: { value: 172 }, on: { value: 0 }, map: { value: blank },
@@ -321,10 +345,10 @@ export function makeMaterial(meta: Meta, light = false) {
     Object.assign(sh.uniforms, own);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\n${VERT_PARS}`)
-      .replace('#include <beginnormal_vertex>', 'vec3 objectNormal = faceNormal(int(va.x + 0.5));')
-      .replace('#include <begin_vertex>', `#include <begin_vertex>
-        vW = (modelMatrix * vec4(transformed, 1.0)).xyz; vAo = va.y / 3.0; vGround = va.z; vPal = int(vp + 0.5);
-        vFace = int(va.x + 0.5); vS = max(va.w, 1.0);`);
+      .replace('#include <beginnormal_vertex>', 'int qFace; float qAo; vec3 qPos = quadCorner(qFace, qAo); vec3 objectNormal = faceNormal(qFace);')
+      .replace('#include <begin_vertex>', `vec3 transformed = qPos;
+        vW = (modelMatrix * vec4(transformed, 1.0)).xyz; vAo = qAo; vGround = qc.z; vPal = int(qa.w + 0.5);
+        vFace = qFace; vS = max(qc.w, 1.0);`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>\n${FRAG_PARS}`)
       .replace('#include <color_fragment>', SURFACE)
@@ -353,33 +377,34 @@ export function makeMaterial(meta: Meta, light = false) {
   };
   const mat = make();
   const fading = Array.from({ length: 8 }, (_, i) => make((i + 0.5) / 8));
-  // the sun's shadow map: bare trees cast what is left of them (only with foliage; three's own depth material
-  // otherwise)
-  let depth: THREE.MeshDepthMaterial | null = null;
-  if (foliage) {
-    depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
-    depth.defines = { FOLIAGE: '' };
+  // the sun's shadow map: the same quads, and with foliage bare trees cast what is left of them
+  const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+  {
+    if (foliage) depth.defines = { FOLIAGE: '' };
     depth.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, uniforms);
       sh.vertexShader = sh.vertexShader
         .replace('#include <common>', `#include <common>
-          attribute vec4 va; attribute float vp; varying vec3 vW; flat varying int vPal; flat varying int vFace; flat varying float vS;`)
-        .replace('#include <begin_vertex>', `#include <begin_vertex>
-          vW = (modelMatrix * vec4(transformed, 1.0)).xyz; vPal = int(vp + 0.5); vFace = int(va.x + 0.5); vS = max(va.w, 1.0);`);
+          ${QUAD}
+          varying vec3 vW; flat varying int vPal; flat varying int vFace; flat varying float vS;`)
+        .replace('#include <begin_vertex>', `int qFace; float qAo; vec3 transformed = quadCorner(qFace, qAo);
+          vW = (modelMatrix * vec4(transformed, 1.0)).xyz; vPal = int(qa.w + 0.5); vFace = qFace; vS = max(qc.w, 1.0);`);
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', `#include <common>
           uniform sampler2D uPal; uniform float uVox; varying vec3 vW; flat varying int vPal; flat varying int vFace; flat varying float vS;
           ${SEASON}`)
         .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+          #ifdef FOLIAGE
           if (uFolOn > 0.5 && int(texelFetch(uPal, ivec2(vPal % 64, vPal / 64), 0).a * 255.0 + 0.5) == ${MAT.LEAF}) {
             vec3 N = vFace == 0 ? vec3(-1., 0., 0.) : vFace == 1 ? vec3(1., 0., 0.) : vFace == 2 ? vec3(0., 0., -1.)
               : vFace == 3 ? vec3(0., 0., 1.) : vFace == 4 ? vec3(0., -1., 0.) : vec3(0., 1., 0.);
             vec3 cell = floor(vW / uVox - N * 0.5 + 1e-3);
             vec4 fo = foliageAt(cell);
             if (fo.w > 0.5 && leafGone(floor(cell / vS), fo.x, vS)) discard;
-          }`);
+          }
+          #endif`);
     };
-    depth.customProgramCacheKey = () => 'voxelpest-depth';
+    depth.customProgramCacheKey = () => (foliage ? 'voxelpest-depth-foliage' : 'voxelpest-depth');
   }
   // lamps: the lamp pools' texture and its scale, for the vehicles' materials (controls/kit.ts)
   return { mat, fading, look, depth, lamps: { uLamps: uniforms.uLamps, uMapSize: uniforms.uMapSize, uNight: uniforms.uNight } };
