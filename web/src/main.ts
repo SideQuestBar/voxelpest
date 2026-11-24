@@ -602,7 +602,7 @@ renderer.setAnimationLoop(frame);
 // the drone is seen through its analogue video feed (engine/feed.ts)
 let feed: Feed | null = null;
 function draw() {
-  if (mode === 'fly' && flyer.kind === 'drone' && !qs.has('nofeed')) (feed ??= new Feed()).render(renderer, scene, camera, look.time.value, flyer.breakup);
+  if (mode === 'fly' && flyer.fpv && !qs.has('nofeed')) (feed ??= new Feed()).render(renderer, scene, camera, look.time.value, flyer.breakup);
   else renderer.render(scene, camera);
 }
 

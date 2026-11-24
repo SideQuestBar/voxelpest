@@ -109,9 +109,9 @@ function controls(kind: 'touch' | 'mouse' | 'pad', mode: 'walk' | 'drive' | 'fly
   const btn = (b: 'A' | 'B' | 'X' | 'Y') => `<kbd class="pb pb-${b}">${b}</kbd>`, pill = (s: string) => k(s, 'pill'), word = (s: string) => k(s, 'word');
   if (mode === 'fly') {
     if (kind === 'mouse') return [[cluster('W', 'A', 'S', 'D'), a.pitchRoll], [`${k('Q')}${k('E')}`, a.yawFly], [`${k('Space', 'wide')}${k('Shift', 'wide')}${or}${k('R')}${k('F')}`, a.upDown],
-      [k('V'), a.nextAir], [k('T'), a.again]];
+      [word(a.mouse), a.lookDrag], [k('V'), a.nextAir], [k('T'), a.again]];
     if (kind === 'pad') return [[pill('LS'), a.pitchRoll], [pill('RS'), a.yawFly], [`${pill('RT')}${pill('LT')}`, a.upDown], [`${pill('LB')}${pill('RB')}`, a.nextAirPad], [btn('Y'), a.again]];
-    return [[word(a.stick), a.pitchRoll], [word(a.pedals), a.climb]];
+    return [[word(a.stick), a.pitchRoll], [word(a.pedals), a.climb], [word(a.drag), a.look]];
   }
   if (kind === 'mouse') return mode === 'walk'
     ? [[cluster('W', 'A', 'S', 'D'), a.walk], [word(a.mouse), a.look], [k('Shift', 'wide'), a.run], [k('Space', 'wide'), a.jump], [k('Esc'), a.free]]

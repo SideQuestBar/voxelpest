@@ -128,26 +128,34 @@ export class FlyHud {
       g.fillStyle = col; g.fillText(str, x, y);
     };
     const cx = w / 2, cy = h / 2, m = 22 * s;
-    // the artificial horizon and its ladder, round the middle
+    // the artificial horizon and its ladder, round the middle (not with the drone seen from outside)
+    const fpv = this.flyer.fpv;
     g.save();
+    if (!fpv) g.globalAlpha = 0;
     g.translate(cx, cy);
     g.rotate(-t.roll);
     const ppd = (h * 0.5) / 30;
     const off = (t.pitch * 180) / Math.PI * ppd;
-    g.strokeStyle = '#ffffff'; g.lineWidth = 2.2 * s; g.shadowColor = 'rgba(0,0,0,0.9)'; g.shadowBlur = 3;
-    g.beginPath(); g.moveTo(-150 * s, off); g.lineTo(-40 * s, off); g.moveTo(40 * s, off); g.lineTo(150 * s, off); g.stroke();
-    for (const d of [-20, -10, 10, 20]) {
-      const y = off - d * ppd;
-      g.setLineDash(d < 0 ? [6 * s, 5 * s] : []);
-      g.beginPath(); g.moveTo(-70 * s, y); g.lineTo(-30 * s, y); g.moveTo(30 * s, y); g.lineTo(70 * s, y); g.stroke();
+    // white on a black outline, as the OSD's text
+    const line = (x0: number, x1: number, y: number) => { g.beginPath(); g.moveTo(-x1, y); g.lineTo(-x0, y); g.moveTo(x0, y); g.lineTo(x1, y); };
+    for (const [col, lw] of [['rgba(0,0,0,0.85)', 4.4 * s], ['#ffffff', 2.2 * s]] as const) {
+      g.strokeStyle = col; g.lineWidth = lw;
+      line(40 * s, 150 * s, off); g.stroke();
+      for (const d of [-20, -10, 10, 20]) {
+        g.setLineDash(d < 0 ? [6 * s, 5 * s] : []);
+        line(30 * s, 70 * s, off - d * ppd); g.stroke();
+      }
+      g.setLineDash([]);
     }
-    g.setLineDash([]);
     g.restore();
-    g.shadowBlur = 0;
     // the crosshair
-    g.strokeStyle = '#ffffff'; g.lineWidth = 2 * s;
-    g.beginPath(); g.moveTo(cx - 14 * s, cy); g.lineTo(cx - 5 * s, cy); g.moveTo(cx + 5 * s, cy); g.lineTo(cx + 14 * s, cy);
-    g.moveTo(cx, cy - 8 * s); g.lineTo(cx, cy - 3 * s); g.stroke();
+    if (!fpv) g.globalAlpha = 0;
+    for (const [col, lw] of [['rgba(0,0,0,0.85)', 4 * s], ['#ffffff', 2 * s]] as const) {
+      g.strokeStyle = col; g.lineWidth = lw;
+      g.beginPath(); g.moveTo(cx - 14 * s, cy); g.lineTo(cx - 5 * s, cy); g.moveTo(cx + 5 * s, cy); g.lineTo(cx + 14 * s, cy);
+      g.moveTo(cx, cy - 8 * s); g.lineTo(cx, cy - 3 * s); g.stroke();
+    }
+    g.globalAlpha = 1;
     // the corners: battery and drawn capacity, link quality, timer, mode, throttle; speed and altitude at the sides
     const volt = Math.max(14.4, 16.8 - t.time * 0.004 - (t.power - 0.3) * 0.9);
     const mah = Math.round(t.time * 9 + t.power * 30);
