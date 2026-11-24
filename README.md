@@ -53,8 +53,15 @@ The prebuilt tiles come as 19 MB parts (`web/public/voxelpest-data.tar.gz.part-*
 | **Map** | drag to turn, right-drag to move, scroll to zoom; W A S D fly. Click a name to fly there |
 | **Walk** | click to look with the mouse; W A S D walk, Shift runs, Space jumps |
 | **Drive** | W / S gas and brake, A / D steer, V changes vehicle, R back on the road |
+| **Fly** | V picks the aircraft: an FPV drone, a small plane or a helicopter. W / S pitch, A / D roll, Q / E yaw, Space / Shift throttle or collective up and down, T back in the air |
 
-Keys 1, 2, 3 switch modes. Touch screens and controllers are supported; the **?** button shows the controls for the
+Each aircraft flies on its own physics. The plane has lift, drag and a propeller: it trims for a speed, climbs on power,
+turns by banking and stalls if pulled too hard. It has a real panel of round instruments. The helicopter leans its
+rotor to go and gives up height for speed unless you raise the collective. The drone has no height hold: tilted, it
+sinks unless given throttle. You see through its analogue video feed, which breaks up when buildings come between it
+and where it took off.
+
+Keys 1, 2, 3, 4 switch modes. Touch screens and controllers are supported; the **?** button shows the controls for the
 device in hand.
 
 ## Documentation

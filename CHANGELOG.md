@@ -33,6 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Viewer: fly mode reworked on real flight physics. The plane flies on lift, drag and angle of attack and holds a
+  trimmed speed; the helicopter trades height for speed as it leans, with translational lift and a collective that stays
+  put, and is quicker (about 145 kt flat out); the drone has thrust along its body and no height hold. Vertical speed
+  now comes from the physics, as on a real aircraft.
+- Viewer: the drone is seen through an analogue video feed that grains, tears and snows as its link weakens; its
+  low-battery warning is gone.
+- Viewer: a sense of speed in the air: the chase camera widens, pulls back, leans and shakes with speed, and streaks
+  flow past.
+- Viewer: the plane's and the helicopter's instruments redrawn like real ones, with a turn coordinator, a three-hand
+  altimeter, a lagging vertical speed indicator, and a tachometer or torque and rotor rpm.
+- Docs: the README covers fly mode.
 - Docs: the new landmark modules and the two map fixes documented.
 - Map: the A38's gangways rebuilt as covered steel footbridges from the quay down to the ship.
 - Map: Rákóczi Bridge's red lighting masts stand on the deck, leaning over the road, instead of blocks in the river.
