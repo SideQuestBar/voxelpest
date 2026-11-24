@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Viewer: in fly mode a drag swings the camera round the aircraft and the wheel zooms; swung round, the drone is seen
+  from outside. It swings back behind on its own.
+- Viewer: the aircraft can land: a touchdown on anything flat and dry is a landing if gentle and a crash if too hard
+  (or on the river). Before, touching the ground at all counted as a crash.
+- Viewer: after a crash the plane and the helicopter come back well above where they last flew clear.
+- Viewer: the plane holds its attitude when the stick is let go, so the attitude sets its speed; it can be slowed for a
+  landing.
+- Viewer: the drone's video feed only glitches slightly now and then, instead of breaking up with distance and buildings.
 - Viewer: fly mode reworked on real flight physics. The plane flies on lift, drag and angle of attack and holds a
   trimmed speed; the helicopter trades height for speed as it leans, with translational lift and a collective that stays
   put, and is quicker (about 145 kt flat out); the drone has thrust along its body and no height hold. Vertical speed

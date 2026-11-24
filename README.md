@@ -55,11 +55,16 @@ The prebuilt tiles come as 19 MB parts (`web/public/voxelpest-data.tar.gz.part-*
 | **Drive** | W / S gas and brake, A / D steer, V changes vehicle, R back on the road |
 | **Fly** | V picks the aircraft: an FPV drone, a small plane or a helicopter. W / S pitch, A / D roll, Q / E yaw, Space / Shift throttle or collective up and down, T back in the air |
 
-Each aircraft flies on its own physics. The plane has lift, drag and a propeller: it trims for a speed, climbs on power,
-turns by banking and stalls if pulled too hard. It has a real panel of round instruments. The helicopter leans its
-rotor to go and gives up height for speed unless you raise the collective. The drone has no height hold: tilted, it
-sinks unless given throttle. You see through its analogue video feed, which breaks up when buildings come between it
-and where it took off.
+Each aircraft flies on its own physics. The plane has lift, drag and a propeller: let go of the stick and it holds its
+attitude, the attitude sets its speed and the throttle its climb; it turns by banking and stalls if pulled too hard,
+and it has a real panel of round instruments. The helicopter leans its rotor to go and gives up height for speed unless
+you raise the collective. The drone has no height hold: tilted, it sinks unless given throttle. You see through its
+analogue video feed, grainy and now and then glitching slightly.
+
+All three can land on anything flat and dry: the plane slowly (idle, nose a little up, about 75 kt), wings level, a
+gentle touchdown; too hard, on the river or into anything is a crash, and you are put back in the air, the plane and
+the helicopter well above where you last flew clear. Drag to swing the camera round the aircraft (the drone is then seen
+from outside), the wheel to zoom; it swings back behind on its own.
 
 Keys 1, 2, 3, 4 switch modes. Touch screens and controllers are supported; the **?** button shows the controls for the
 device in hand.
