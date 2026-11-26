@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Map: grown to 8.6 × 8.6 km: 1 km more at the top takes in all of Margaret Island up to Árpád Bridge, Újlipótváros and
   Rózsadomb, and 0.5 km more on the left the whole track field of Kelenföld station and the M4 depot. A `margitsziget`
   view.
+- Map: 32 more landmarks modelled in detail: Margaret Island (Water Tower and stage, Palatinus, Hajós pool, Musical
+  Fountain, chapel, Bodor well, Japanese Garden, Thermal and Grand hotels, Árpád Bridge's girders), the Royal Palace's
+  roofs, the Várkert Bazár, the funicular and tunnel portal, the Mary Magdalene Tower, the Hospital in the Rock and
+  the Cave Church, the Rudas, Király, Lukács and Komjádi baths and Gül Baba's tomb, the Academy of Sciences, Gresham,
+  Vigadó, Inner City Parish Church, Klotild Palaces, Corvinus, Párisi udvar, Franciscan and University churches, the
+  Stock Exchange, National Bank, US Embassy, Postal Savings Bank, Liszt Academy, New York Palace, Vígszínház, Kerepesi
+  Cemetery's mausoleums, the Ludovika, the National Theatre, Papp László Sportaréna, the Northern Vehicle Repair
+  Works, St Emeric's on Villányi út, Millenáris and the Mammut.
 
 ### Changed
 

@@ -1,6 +1,6 @@
 # Landmarks built by hand
 
-`scripts/landmarks.py` and the `scripts/landmarks_*.py` modules draw thirty-nine landmarks at 0.5 m from measured dimensions and reference photos, on
+`scripts/landmarks.py` and the `scripts/landmarks_*.py` modules draw over a hundred landmarks at 0.5 m from measured dimensions and reference photos, on
 the positions, outlines and heights OSM gives. This page lists what each one is made of, the numbers it uses, and where
 they come from. The photos are linked, not copied: their licences vary.
 
@@ -1533,3 +1533,50 @@ Field each: the depth inside the outline (`d`) and the distance along it (`s`) g
 - **Fixes**: the A38's two gangways as covered trusses sloping from the quay to the ship's upper deck (the OSM ways
   are left out of the roads and decks); Rákóczi Bridge's five red masts on the deck's edge, leaning over the road on
   raked legs, lamps at their tips (OSM maps them as buildings, which made blocks from the river bed up).
+
+## Late November 2026, fifth round: Margaret Island, the Castle, the baths, the Inner City and beyond
+
+Modelled in `landmarks_margit.py`, `landmarks_var.py`, `landmarks_baths.py`, `landmarks_belvaros.py` and
+`landmarks_kulso.py` from OSM's outlines, the Esri aerial and street photos, on `landmarks_kit.py`'s `painted` and
+`styled`. Where the aerial was the only source (the palace's pavilions, the Rudas dome, the Franciscan tower, the
+University Church's front, the New York Palace's towers) the grid coordinates are in the module.
+
+- **Margaret Island**: the Water Tower (1911), an octagonal shaft in cream with ochre corners, the tank storey's bay
+  windows and eight balconies, the green copper roof and lantern to 57 m; the open-air stage's fan of seats rising
+  from the stage, its white shell and the roofed walk round the tower; the Palatinus's white 1937 entrance block with
+  ribbon windows and a glazed sawtooth roof; the Hajós pool's brick hall, the 1937 clinker colonnade, blue stands
+  rising from the pool and the white air domes; the Musical Fountain's basin, jet ring and pods, and the Centenary
+  Monument's twisting bronze calyx (13 m); the Premonstratensian chapel in rough stone with its belfry; the Bodor
+  well's pavilion and copper dome; the Japanese Garden's red footbridge over the pond's narrowest neck, rocks and
+  stone lanterns; the Thermal's balcony slab over its wings and roof gardens, Ybl's Grand Hotel in cream under grey
+  roofs; Árpád Bridge's steel girders under the deck's edges and its piers in the river.
+- **Royal Palace**: copper mansards over the wings (the generic roofs carved off first, the dome's drum left alone),
+  the National Gallery's glazed hall roofs where a wing is deeper than 11 m, copper caps on nine corner pavilions.
+- **Várkert Bazár** (Ybl, 1875-83): arcades with loggias above and balustraded terraces, the stair pavilion's glazed
+  dome, the Guards' Palace and the southern palaces under grey hips.
+- **Castle Hill Funicular**: the track on a viaduct of stepped arches (a `Slab` sloping from station to station), four
+  rails, the two stepped maroon and cream cars, the iron footbridge halfway, the octagonal upper station under its
+  green dome and the lower station; and the **tunnel's east portal** (Adam Clark, 1857): sandstone front, paired Doric
+  columns, entablature and attic, the arched mouth carved into the hill.
+- **Mary Magdalene Tower**: pale Gothic stone to 36 m, lancets, clocks, a copper roof and spire to 50 m, the rebuilt
+  lone Gothic window at the far end of the ruined nave's low walls; the **Hospital in the Rock**'s concrete portal on
+  Lovas út; the **Cave Church**'s rock portal and white cross, and the Pauline monastery with its spired tower.
+- **Baths**: the Rudas's Ottoman dome studded with skylights and four small domes over flat roofs, its wings in white
+  under red tiles; the Király's copper dome and three small ones behind the ochre wing; the Lukács in cream under red
+  hips; the Komjádi's white vaulted hall with glazed ends and the opening middle band; Gül Baba's octagonal tomb under
+  a ribbed lead dome and crescent.
+- **Inner City**: the Academy of Sciences (the great hall's arched windows, balustrade, statues on its corners); the
+  Gresham's copper corner domes and gilded gable; the Vigadó's tall arched windows and banded sandstone under steep
+  slate; the Inner City Parish Church's two copper-helmed towers to the square; the Klotild Palaces' domed corner
+  towers facing the bridge; Corvinus's Customs House in brick and ochre with ground-floor arcades and the glazed hall;
+  the Párisi udvar's crest of slate turrets; the Franciscan church's stone tower and copper spire; the University
+  Church's two towers.
+- **Szabadság tér and beyond**: the Stock Exchange's giant colonnade and four domed corner towers; the National Bank
+  with its glazed court; the US Embassy's Art Nouveau houses; Lechner's Postal Savings Bank, white with yellow and blue
+  ceramics under green and yellow Zsolnay tiles with gables on the crest; the Liszt Academy's portico and seated Liszt;
+  the New York Palace's spired towers; the Vígszínház's copper roof, central dome and domed corner towers.
+- **Outer districts**: Kerepesi's Kossuth, Deák and Batthyány mausoleums, the arcades under copper and the Labour
+  Movement Pantheon; the Ludovika's six-column portico; the National Theatre's stepped glass roof and the Ziggurat;
+  the Papp László Sportaréna's glass base and silver dome; the Northern Vehicle Repair Works' brick halls under glazed
+  sawtooths; the Cistercian church of St Emeric (its two towers to green spires at 54 m, OSM's parts drawn again);
+  Millenáris's Ganz halls under glazed saddle roofs and the office range; the Mammut malls in pale bands and glass.
