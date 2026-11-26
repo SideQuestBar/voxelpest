@@ -63,8 +63,8 @@ analogue video feed, grainy and now and then glitching slightly.
 
 All three can land on anything flat and dry: the plane slowly (idle, nose a little up, about 75 kt), wings level, a
 gentle touchdown; too hard, on the river or into anything is a crash, and you are put back in the air, the plane and
-the helicopter well above where you last flew clear. Drag to swing the camera round the aircraft (the drone is then seen
-from outside), the wheel to zoom; it swings back behind on its own.
+the helicopter well above where you last flew clear. Drag to swing the camera round the plane or the helicopter, the wheel to zoom; it swings back behind on its own (the
+drone stays first person).
 
 Keys 1, 2, 3, 4 switch modes. Touch screens and controllers are supported; the **?** button shows the controls for the
 device in hand.
