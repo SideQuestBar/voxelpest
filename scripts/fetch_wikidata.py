@@ -28,17 +28,26 @@ SELECT ?i ?hu ?en ?kindLabel ?coord ?height ?inception ?huwiki ?enwiki WHERE {{
   OPTIONAL {{ ?enwiki schema:about ?i ; schema:isPartOf <https://en.wikipedia.org/> }}
   SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en,hu". }}
 }}"""
-for attempt in range(4):
-    r = requests.get("https://query.wikidata.org/sparql", params={"query": Q},
-                     headers={"Accept": "application/sparql-results+json", "User-Agent": "voxelpest/0.1 (open-data city model)"},
-                     timeout=300)
-    if r.ok:
+OUT = Path("data/raw/wikidata.json")
+rows = None
+for attempt in range(4):  # the query service can also time out mid-answer: a 200 whose JSON stops short
+    try:
+        r = requests.get("https://query.wikidata.org/sparql", params={"query": Q},
+                         headers={"Accept": "application/sparql-results+json",
+                                  "User-Agent": "voxelpest/0.1 (open-data city model)"}, timeout=300)
+        r.raise_for_status()
+        rows = r.json()["results"]["bindings"]
         break
-    print("retry", r.status_code)
-    time.sleep(10 * (attempt + 1))
-r.raise_for_status()
+    except (requests.RequestException, ValueError, KeyError) as e:
+        print("retry:", str(e)[:120])
+        time.sleep(10 * (attempt + 1))
+if rows is None:
+    if OUT.exists():
+        print(f"Wikidata did not answer; keeping the {OUT} from before")
+        raise SystemExit(0)
+    raise SystemExit("Wikidata did not answer; run this again later")
 items = {}
-for b in r.json()["results"]["bindings"]:
+for b in rows:
     qid = b["i"]["value"].rsplit("/", 1)[1]
     it = items.setdefault(qid, {"qid": qid, "kinds": []})
     lon, lat = map(float, b["coord"]["value"].removeprefix("Point(").rstrip(")").split())
@@ -48,6 +57,6 @@ for b in r.json()["results"]["bindings"]:
             it[k] = b[k]["value"]
     if "kindLabel" in b and b["kindLabel"]["value"] not in it["kinds"]:
         it["kinds"].append(b["kindLabel"]["value"])
-Path("data/raw").mkdir(parents=True, exist_ok=True)
-json.dump(list(items.values()), open("data/raw/wikidata.json", "w"), ensure_ascii=False)
+OUT.parent.mkdir(parents=True, exist_ok=True)
+json.dump(list(items.values()), open(OUT, "w"), ensure_ascii=False)
 print(len(items), "Wikidata items in the AOI")
