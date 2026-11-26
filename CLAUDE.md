@@ -15,7 +15,11 @@ minecraft/plugin/server/publish-minecraft, desktop (the viewer as a Linux AppIma
 deployments**: `scripts/publish_web.sh` (a static site on Cloudflare Pages through wrangler; settings
 `~/.config/voxelpest/web.env`, example in `web/deploy/`) and `scripts/publish_minecraft.sh` (`minecraft.env`,
 `minecraft/docker-compose.yml`). Nothing in one refers to the other; they share only `web/public/data`. There is no
-Docker for the web. JavaScript packages and scripts are Bun's (`bun.lock` in `web/` and `desktop/`; Node is still what Vite, electron-builder and wrangler run on). Underneath:
+Docker for the web. The web one also runs from GitHub Actions
+(`.github/workflows/deploy-web.yml`) on a version tag (`v*`, the one that releases the desktop app) or by hand: the
+same `./bv publish-web` with an empty settings file and the settings in its environment, from the repository's Actions
+variables (web.env's names; unset ones take the defaults) and the secret `CLOUDFLARE_API_TOKEN`. The Minecraft server is
+only reachable over Tailscale and is published by hand. JavaScript packages and scripts are Bun's (`bun.lock` in `web/` and `desktop/`; Node is still what Vite, electron-builder and wrangler run on). Underneath:
 
 ```
 sh scripts/build_data.sh                               # fetch (cached in data/raw) + prep + voxelize, ~28 min

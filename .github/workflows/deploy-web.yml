@@ -1,0 +1,63 @@
+# The web viewer published to Cloudflare Pages as ./bv publish-web publishes it (scripts/publish_web.sh), on a version
+# tag (v1.2.3, the one that releases the desktop app), or by hand.
+#
+# Settings: web.env's (web/deploy/web.env.example), as the repository's Actions variables, all optional but for the
+# token: CF_PROJECT, CF_BRANCH, CLOUDFLARE_ACCOUNT_ID, WRANGLER_VERSION, WEB_DOMAIN, BAR_URL, MINECRAFT, MC_ADDRESS,
+# MC_STATUS_URL, UMAMI_URL, UMAMI_ID (the desktop workflow reads the same ones). And one secret, CLOUDFLARE_API_TOKEN
+# ("Cloudflare Pages: Edit"): wrangler can't log in through a browser here.
+name: deploy-web
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false  # a deploy under way finishes; the next one follows it
+
+jobs:
+  pages:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # the map's parts are in Git LFS (~125 MB): kept between runs (the desktop workflow's cache too), so that a
+      # deploy doesn't spend LFS bandwidth unless the map changed (the pointer files' hash)
+      - uses: actions/cache@v6
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('web/public/voxelpest-data.tar.gz.part-*') }}
+      - run: git lfs pull
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+
+      # the script wants a settings file: an empty one, so that the environment below is all there is
+      - name: Publish
+        env:
+          CF_PROJECT: ${{ vars.CF_PROJECT }}
+          CF_BRANCH: ${{ vars.CF_BRANCH }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_VERSION: ${{ vars.WRANGLER_VERSION }}
+          WEB_DOMAIN: ${{ vars.WEB_DOMAIN }}
+          BAR_URL: ${{ vars.BAR_URL }}
+          MINECRAFT: ${{ vars.MINECRAFT }}
+          MC_ADDRESS: ${{ vars.MC_ADDRESS }}
+          MC_STATUS_URL: ${{ vars.MC_STATUS_URL }}
+          UMAMI_URL: ${{ vars.UMAMI_URL }}
+          UMAMI_ID: ${{ vars.UMAMI_ID }}
+        run: |
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::the secret CLOUDFLARE_API_TOKEN is not set"; exit 1; }
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || unset CLOUDFLARE_ACCOUNT_ID
+          : > "$RUNNER_TEMP/web.env"
+          VOXELPEST_WEB_ENV=$RUNNER_TEMP/web.env ./bv publish-web
