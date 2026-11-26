@@ -468,8 +468,13 @@ def new_modules():
     import landmarks_ujbuda
     import landmarks_vizivaros
     import landmarks_xl
+    import landmarks_margit
+    import landmarks_var
+    import landmarks_baths
+    import landmarks_belvaros
+    import landmarks_kulso
     return [landmarks_hosok, landmarks_buda, landmarks_pest, landmarks_xl, landmarks_ferenc, landmarks_ujbuda,
-            landmarks_vizivaros]
+            landmarks_vizivaros, landmarks_margit, landmarks_var, landmarks_baths, landmarks_belvaros, landmarks_kulso]
 
 
 # ------------------------------------------------------------------------------------------------ build
