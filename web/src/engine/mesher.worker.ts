@@ -11,7 +11,8 @@
 
 // see: palette ids (leaves) that hide no other voxel's faces, when trees go bare through the year (engine/foliage.ts):
 // the trunk and branches inside a crown, a wall behind a tree, keep their faces
-export interface MeshJob { id: number; url: string; N: number; s: number; tx: number; ty: number; keep: boolean; see?: Uint8Array }
+// bytes: the tile's gzip, cut from its bundle by tiles.ts (null: the map has no such tile); url: its bundle, for errors
+export interface MeshJob { id: number; url: string; bytes: ArrayBuffer | null; N: number; s: number; tx: number; ty: number; keep: boolean; see?: Uint8Array }
 export interface Cols { off: Uint32Array; runs: Uint16Array; ground: Uint8Array }
 // A quad is one instance, 16 bytes (four vertices of 12 bytes each before: a third of the memory, on the GPU and on
 // the way there). Its plane's axes by face: 0, 1 (-x, +x): u up, v along z; 2, 3 (-z, +z): u along x, v up; 4, 5
@@ -233,11 +234,9 @@ self.onmessage = async (e: MessageEvent<MeshJob>) => {
   const job = e.data;
   let res: MeshResult;
   try {
-    const r = await fetch(job.url);
-    if (r.status === 404) res = empty(job.id);
-    else if (!r.ok || !r.body) res = empty(job.id, `${r.status} ${job.url}`);
+    if (!job.bytes) res = empty(job.id);
     else {
-      const buf = await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+      const buf = await new Response(new Blob([job.bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
       res = mesh(buf, job);
     }
   } catch (err) {

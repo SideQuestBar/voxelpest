@@ -1,6 +1,7 @@
 // Which tiles to draw, and loading them. The tiles form a quadtree per level (meta.tiles: a cell is s voxels, s = 16,
 // 8, 4, 2, 1): the whole map is always there at the coarsest level, and a tile is replaced by its four children once
-// they are all meshed, wherever one of its cells would cover more than `err` pixels on screen. Walking and driving
+// they are all meshed, wherever one of its cells would cover more than `err` pixels on screen. The four children of a
+// tile come in one file, a bundle (tiles/{s}/{x}_{y}.pak, vite.config.js), fetched here once for all four. Walking and driving
 // pin the finest tiles round the player and keep their columns for collisions. A tile giving way to others dissolves
 // over them for a moment instead of vanishing.
 import * as THREE from 'three';
@@ -62,6 +63,9 @@ export class Tiles {
   private lastUpdate = 0;
   private readonly fading = new Map<Tile, number>();  // tiles on their way out, since when
   private probe: THREE.Mesh | null = null;
+  // the bundles: fetched once, cut up as their tiles go to the workers, forgotten a while after (`sweep`)
+  private readonly paks = new Map<string, { buf: ArrayBuffer | null; ready: boolean; err?: string; t: number }>();
+  private fetching = 0;
 
   // `fadeMats`: the material at rising shares of pixels dropped (material.ts)
   constructor(private readonly meta: Meta, private readonly material: THREE.Material, private readonly fadeMats: THREE.Material[] = []) {
@@ -228,20 +232,59 @@ export class Tiles {
     m.castShadow = true;
   }
 
+  private pakKey(t: Tile) { return `${t.s}/${t.tx >> 1}_${t.ty >> 1}`; }
+
+  private pakUrl(key: string) { return new URL(`data/tiles/${key}.pak${this.query}`, document.baseURI).href; }
+
+  // a bundle: a header of four (offset, length) uint32 pairs, children (0,0) (1,0) (0,1) (1,1), then their gzips
+  private fetchPak(key: string) {
+    const p = { buf: null as ArrayBuffer | null, ready: false, err: undefined as string | undefined, t: performance.now() };
+    this.paks.set(key, p);
+    this.fetching++;
+    fetch(this.pakUrl(key))
+      .then((r) => (r.status === 404 ? null : r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status} ${this.pakUrl(key)}`))))
+      .then((b) => { p.buf = b; }, (e) => { p.err = String(e); })
+      .finally(() => { p.ready = true; p.t = performance.now(); this.fetching--; this.pump(); });
+  }
+
+  private cut(t: Tile, p: { buf: ArrayBuffer | null }) {
+    if (!p.buf || p.buf.byteLength < 32) return null;
+    const h = new Uint32Array(p.buf, 0, 8), k = ((t.ty & 1) << 1) | (t.tx & 1), off = h[2 * k], len = h[2 * k + 1];
+    return len ? p.buf.slice(off, off + len) : null;
+  }
+
+  private sweep(now: number) {
+    if (this.paks.size < 32) return;
+    for (const [k, p] of this.paks) if (p.ready && now - p.t > 10000) this.paks.delete(k);
+  }
+
   private pump() {
     const queued = [...this.tiles.values()].filter((t) => t.state === 'queued').sort((a, b) => b.prio - a.prio);
+    // the bundles of the most wanted tiles on their way, a few at a time
+    for (const t of queued) {
+      if (this.fetching >= 6) break;
+      const k = this.pakKey(t);
+      if (!this.paks.has(k)) this.fetchPak(k);
+    }
+    // to the workers, the most wanted tiles whose bundle is in
+    const now = performance.now();
     for (const wk of this.workers) {
       if (wk.busy) continue;
-      const t = queued.shift();
-      if (!t) break;
+      const i = queued.findIndex((t) => this.paks.get(this.pakKey(t))?.ready);
+      if (i < 0) break;
+      const t = queued.splice(i, 1)[0], key = this.pakKey(t), p = this.paks.get(key)!;
+      p.t = now;
       const id = this.nextId++;
       t.state = 'loading';
       this.jobs.set(id, t);
       wk.busy = true;
-      const job: MeshJob = { id, url: new URL(`data/tiles/${t.s}/${t.tx}_${t.ty}.bin${this.query}`, document.baseURI).href, N: this.N, s: t.s, tx: t.tx, ty: t.ty,
+      const bytes = this.cut(t, p);
+      const job: MeshJob = { id, url: this.pakUrl(key), bytes, N: this.N, s: t.s, tx: t.tx, ty: t.ty,
         keep: t.s === this.levels[this.levels.length - 1], see: this.see ?? undefined };
-      wk.w.postMessage(job);
+      if (p.err) console.warn(p.err);
+      wk.w.postMessage(job, bytes ? [bytes] : []);
     }
+    this.sweep(now);
   }
 
   private done(r: MeshResult, wi: number) {

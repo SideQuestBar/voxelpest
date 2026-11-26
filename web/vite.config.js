@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
@@ -12,6 +12,62 @@ function dropMapParts() {
     configResolved(c) { out = resolve(c.root, c.build.outDir); },
     closeBundle() {
       for (const f of readdirSync(out)) if (f.startsWith('voxelpest-data.tar.gz')) rmSync(join(out, f));
+    },
+  };
+}
+
+// The map is published in bundles: the four tiles that share a parent in one file, tiles/{s}/{x}_{y}.pak for the
+// children (2x, 2y), (2x+1, 2y), (2x, 2y+1), (2x+1, 2y+1) of tile (x, y) of the next coarser level. The quadtree
+// (src/engine/tiles.ts) only ever asks for all four at once, so this is the same bytes in a quarter of the requests,
+// and a quarter of the files: Cloudflare Pages takes 20 000 at most. A bundle: eight little-endian uint32, the offset
+// (from the bundle's start) and length of each child's gzip (0: no such tile), then the gzips. web/public/data keeps
+// the tiles one per file (scripts/minecraft.py reads them); the dev server bundles them as they are asked for.
+function pak(dir, s, x, y) {
+  const kids = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([dx, dy]) => {
+    const f = join(dir, String(s), `${2 * x + dx}_${2 * y + dy}.bin`);
+    return existsSync(f) ? readFileSync(f) : null;
+  });
+  if (!kids.some(Boolean)) return null;
+  const head = Buffer.alloc(32);
+  let off = 32;
+  kids.forEach((k, i) => { head.writeUInt32LE(k ? off : 0, 8 * i); head.writeUInt32LE(k ? k.length : 0, 8 * i + 4); off += k ? k.length : 0; });
+  return Buffer.concat([head, ...kids.filter(Boolean)]);
+}
+
+function bundleTiles(root) {
+  let n = 0, files = 0;
+  for (const s of readdirSync(root)) {
+    const keys = new Set();
+    for (const f of readdirSync(join(root, s))) {
+      const m = /^(\d+)_(\d+)\.bin$/.exec(f);
+      if (m) keys.add(`${+m[1] >> 1}_${+m[2] >> 1}`);
+    }
+    for (const k of keys) {
+      const [x, y] = k.split('_').map(Number);
+      writeFileSync(join(root, s, `${k}.pak`), pak(root, s, x, y));
+      n++;
+    }
+    for (const f of readdirSync(join(root, s))) if (f.endsWith('.bin')) { rmSync(join(root, s, f)); files++; }
+  }
+  console.log(`bundle-tiles: ${files} tiles in ${n} bundles`);
+}
+
+function serveBundles() {
+  let root;
+  return {
+    name: 'serve-bundles',
+    apply: 'serve',
+    configResolved(c) { root = join(c.publicDir, 'data', 'tiles'); },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const m = /\/data\/tiles\/(\d+)\/(\d+)_(\d+)\.pak(\?|$)/.exec(req.url || '');
+        if (!m) return next();
+        const b = pak(root, m[1], +m[2], +m[3]);
+        if (!b) { res.statusCode = 404; return res.end(); }
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.end(b);
+      });
     },
   };
 }
@@ -29,6 +85,7 @@ function versionTiles() {
     closeBundle() {
       const meta = join(out, 'data', 'meta.json');
       const root = join(out, 'data', 'tiles');
+      bundleTiles(root);
       const h = createHash('sha256');
       const files = readdirSync(root, { recursive: true, withFileTypes: true })
         .filter((d) => d.isFile()).map((d) => join(d.parentPath, d.name)).sort();
@@ -37,7 +94,7 @@ function versionTiles() {
       const m = JSON.parse(readFileSync(meta, 'utf8'));
       m.tiles.v = h.digest('hex').slice(0, 16);
       writeFileSync(meta, JSON.stringify(m));
-      console.log(`version-tiles: ${files.length} tiles, v=${m.tiles.v}`);
+      console.log(`version-tiles: ${files.length} bundles, v=${m.tiles.v}`);
       writeOffline(out, m.tiles.v);
     },
   };
@@ -77,7 +134,7 @@ const { version } = JSON.parse(readFileSync(new URL('./package.json', import.met
 export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version) },  // the about box shows it
   base: './',
-  plugins: [dropMapParts(), versionTiles(), siteUrl()],
+  plugins: [dropMapParts(), versionTiles(), serveBundles(), siteUrl()],
   worker: { format: 'es' },
   build: { chunkSizeWarningLimit: 2000, target: 'es2022' },
   // bun run dev with the Minecraft card on (?minecraft=1) and ./bv server running here: its player count
