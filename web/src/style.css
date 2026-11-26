@@ -592,6 +592,7 @@ body[data-mode="drive"] #fps, body[data-mode="fly"] #fps { top: calc(96px + var(
   #bar, #places { bottom: var(--by); }
   #locate { bottom: calc(var(--by) + 50px); }
   #status { bottom: calc(var(--by) + var(--bar-h, 42px) + 8px); }
+  body[data-mode="fly"] #status { bottom: calc(var(--by) + 80px); }   /* over the instruments in the bottom row */
   #promo { top: calc(34px + var(--sat)); }
   #vehicles, #aircraft { position: static; }
   #vehicles button, #aircraft button { padding: 5px 8px; }

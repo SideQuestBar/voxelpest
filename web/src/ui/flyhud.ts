@@ -128,10 +128,8 @@ export class FlyHud {
       g.fillStyle = col; g.fillText(str, x, y);
     };
     const cx = w / 2, cy = h / 2, m = 22 * s;
-    // the artificial horizon and its ladder, round the middle (not with the drone seen from outside)
-    const fpv = this.flyer.fpv;
+    // the artificial horizon and its ladder, round the middle
     g.save();
-    if (!fpv) g.globalAlpha = 0;
     g.translate(cx, cy);
     g.rotate(-t.roll);
     const ppd = (h * 0.5) / 30;
@@ -149,13 +147,11 @@ export class FlyHud {
     }
     g.restore();
     // the crosshair
-    if (!fpv) g.globalAlpha = 0;
     for (const [col, lw] of [['rgba(0,0,0,0.85)', 4 * s], ['#ffffff', 2 * s]] as const) {
       g.strokeStyle = col; g.lineWidth = lw;
       g.beginPath(); g.moveTo(cx - 14 * s, cy); g.lineTo(cx - 5 * s, cy); g.moveTo(cx + 5 * s, cy); g.lineTo(cx + 14 * s, cy);
       g.moveTo(cx, cy - 8 * s); g.lineTo(cx, cy - 3 * s); g.stroke();
     }
-    g.globalAlpha = 1;
     // the corners: battery and drawn capacity, link quality, timer, mode, throttle; speed and altitude at the sides
     const volt = Math.max(14.4, 16.8 - t.time * 0.004 - (t.power - 0.3) * 0.9);
     const mah = Math.round(t.time * 9 + t.power * 30);
@@ -189,21 +185,40 @@ export class FlyHud {
     let set: Inst[] = plane ? ['asi', 'ai', 'alt', 'tc', 'hi', 'vsi', 'rpm'] : ['asi', 'ai', 'alt', 'trq', 'hi', 'vsi', 'nr'];
     if (w < 560) set = ['asi', 'ai', 'alt', 'vsi'];
     else if (w < 800) set = ['asi', 'ai', 'alt', 'hi', 'vsi'];
-    const n = set.length, small = w < 700 || h < 500;
-    const r = Math.max(24, Math.min(54, (w - 24) / (n * 2.32)));
-    const side = 2.2 * r, gap = 0.1 * r, total = n * side + (n - 1) * gap;
-    const y = h - r * 1.1 - (small ? 62 : 74), x0 = w / 2 - total / 2 + side / 2;
-    // the panel behind them
-    const grd = g.createLinearGradient(0, y - r * 1.2, 0, y + r * 1.2);
-    grd.addColorStop(0, 'rgba(38, 41, 45, 0.92)'); grd.addColorStop(1, 'rgba(22, 24, 27, 0.92)');
-    g.fillStyle = grd;
-    round(g, x0 - side / 2 - r * 0.12, y - r * 1.22, total + r * 0.24, r * 2.44, r * 0.22);
-    g.fill();
-    g.strokeStyle = 'rgba(255,255,255,0.07)'; g.lineWidth = 1; g.stroke();
+    // a landscape phone: no panel, bare dials in the bottom row, in the gap between the bar and Places, as many as fit
+    const slot = h < 500 ? this.slot(now, w, h) : null;
+    this.lean = !!slot;
+    let n = set.length, r: number, side: number, gap: number, y: number, mid = w / 2;
+    if (slot) {
+      const room = slot.x1 - slot.x0;
+      // which ones first when they don't all fit, kept in the panel's order
+      const first: Inst[] = plane ? ['asi', 'ai', 'alt', 'hi', 'vsi', 'tc', 'rpm'] : ['asi', 'ai', 'alt', 'hi', 'vsi', 'trq', 'nr'];
+      const all: Inst[] = plane ? ['asi', 'ai', 'alt', 'tc', 'hi', 'vsi', 'rpm'] : ['asi', 'ai', 'alt', 'trq', 'hi', 'vsi', 'nr'];
+      n = Math.min(all.length, Math.max(3, Math.floor(room / (26 * 2.14))));
+      set = all.filter((k) => first.indexOf(k) < n);
+      r = Math.max(22, Math.min(34, room / (n * 2.14)));
+      side = 2.06 * r; gap = 0.08 * r;
+      y = slot.bottom - r * 1.03 - 1; mid = (slot.x0 + slot.x1) / 2;
+    } else {
+      r = Math.max(24, Math.min(54, (w - 24) / (n * 2.32)));
+      side = 2.2 * r; gap = 0.1 * r;
+      y = h - r * 1.1 - (w < 700 ? 62 : 74);
+    }
+    const total = n * side + (n - 1) * gap, x0 = mid - total / 2 + side / 2;
+    if (!slot) {
+      // the panel behind them
+      const grd = g.createLinearGradient(0, y - r * 1.2, 0, y + r * 1.2);
+      grd.addColorStop(0, 'rgba(38, 41, 45, 0.92)'); grd.addColorStop(1, 'rgba(22, 24, 27, 0.92)');
+      g.fillStyle = grd;
+      round(g, x0 - side / 2 - r * 0.12, y - r * 1.22, total + r * 0.24, r * 2.44, r * 0.22);
+      g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.07)'; g.lineWidth = 1; g.stroke();
+    }
     const asi = plane ? ASI_PLANE : ASI_HELI;
     set.forEach((k, i) => {
       const x = x0 + i * (side + gap);
-      this.blit(g, `plate`, x, y, r, dpr, (c) => plateFace(c, r));
+      if (slot) this.blit(g, 'bezel', x, y, r, dpr, (c) => bezelFace(c, r));
+      else this.blit(g, 'plate', x, y, r, dpr, (c) => plateFace(c, r));
       switch (k) {
         case 'asi':
           this.blit(g, `asi-${t.kind}`, x, y, r, dpr, (c) => asiFace(c, r, plane));
@@ -247,25 +262,40 @@ export class FlyHud {
     const tt = T();
     const warn = t.crashed ? tt.crashed : t.stall ? tt.stall : t.ground ? tt.onGround : '';
     if (warn && (!t.stall || t.crashed || now % 0.5 < 0.32)) {
-      g.font = `800 ${Math.round(r * 0.3)}px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      const tw = g.measureText(warn).width + r * 0.6, th = r * 0.48, cy = y - r * 1.22 - th * 0.75;
+      g.font = `800 ${Math.round(Math.max(11, r * 0.3))}px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const tw = g.measureText(warn).width + r * 0.6, th = Math.max(18, r * 0.48), cy = y - r * 1.22 - th * 0.75;
       g.fillStyle = t.crashed || t.stall ? '#c8231c' : 'rgba(30, 32, 35, 0.85)';
-      round(g, w / 2 - tw / 2, cy - th / 2, tw, th, r * 0.08); g.fill();
+      round(g, mid - tw / 2, cy - th / 2, tw, th, r * 0.08); g.fill();
       g.strokeStyle = t.crashed || t.stall ? '#ff8a80' : 'rgba(255,255,255,0.25)'; g.lineWidth = 1; g.stroke();
-      g.fillStyle = '#ffffff'; g.fillText(warn, w / 2, cy + 1);
+      g.fillStyle = '#ffffff'; g.fillText(warn, mid, cy + 1);
     }
+  }
+
+  // on a landscape phone, the free stretch of the bottom row: from the bar's right end to Places' left, and the row's
+  // bottom (measured twice a second: the bar's width follows the language and the date)
+  private lean = false;   // small dials: numbers and marks only, no names
+  private gap: { t: number; x0: number; x1: number; bottom: number } | null = null;
+  private slot(now: number, w: number, h: number) {
+    if (!this.gap || now - this.gap.t > 0.5 || now < this.gap.t) {
+      const bar = document.getElementById('bar')?.getBoundingClientRect(), pl = document.getElementById('places')?.getBoundingClientRect();
+      const x0 = bar?.width ? bar.right + 8 : 8, x1 = pl?.width ? pl.left - 8 : w - 8;
+      this.gap = { t: now, x0, x1, bottom: bar?.width ? bar.bottom : pl?.width ? pl.bottom : h - 6 };
+    }
+    return this.gap.x1 - this.gap.x0 >= 3 * 22 * 2.14 ? this.gap : null;
   }
 
   // a dial drawn once for its size, then copied
   private blit(g: Ctx, key: string, x: number, y: number, r: number, dpr: number, paint: (c: Ctx) => void) {
-    const size = Math.ceil(r * 2.3 * dpr), id = `${key}:${size}`;
+    const size = Math.ceil(r * 2.3 * dpr), id = `${key}:${size}:${this.lean}`;
     let cv = this.cache.get(id);
     if (!cv) {
       cv = document.createElement('canvas');
       cv.width = cv.height = size;
       const c = cv.getContext('2d')!;
       c.setTransform(dpr, 0, 0, dpr, size / 2, size / 2);
+      lean = this.lean;
       paint(c);
+      lean = false;
       this.cache.set(id, cv);
     }
     g.drawImage(cv, x - size / dpr / 2, y - size / dpr / 2, size / dpr, size / dpr);
@@ -361,7 +391,11 @@ function plateFace(c: Ctx, r: number) {
     c.strokeStyle = '#1b1d20'; c.lineWidth = Math.max(1, r * 0.015);
     c.beginPath(); c.moveTo(px - sr * 0.7, py - sr * 0.2); c.lineTo(px + sr * 0.7, py + sr * 0.2); c.stroke();
   }
-  // the bezel
+  bezelFace(c, r);
+}
+
+// the bezel alone, for dials standing over the picture without a panel
+function bezelFace(c: Ctx, r: number) {
   const bz = c.createLinearGradient(0, -r, 0, r);
   bz.addColorStop(0, '#53575c'); bz.addColorStop(0.5, '#1f2124'); bz.addColorStop(1, '#3f4246');
   c.fillStyle = bz; c.beginPath(); c.arc(0, 0, r * 1.03, 0, TAU); c.fill();
@@ -407,7 +441,10 @@ function redLine(c: Ctx, r: number, a: number) {
   c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
 }
 
+// the dials' names and units (DIM) are left off the small dials of a landscape phone: they would be unreadable smudges
+let lean = false;
 function label(c: Ctx, s: string, x: number, y: number, size: number, col = DIM, weight = 600) {
+  if (lean && col === DIM) return;
   c.fillStyle = col; c.font = `${weight} ${Math.max(6, Math.round(size))}px ${SANS}`; c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText(s, x, y);
 }
