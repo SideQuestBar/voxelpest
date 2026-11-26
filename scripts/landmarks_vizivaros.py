@@ -34,7 +34,7 @@ def mom_park(S, ctx, plan):
     trav, trav2, glass, glass2, win = P("#e3d9c4"), P("#d5cab3"), P("#3f6a74", GLASS), P("#4f7c86", GLASS), P("#2f3a40", GLASS)
     roof, green, steel = P("#a9aca8", ROOF), P("#3f8a6c", ROOF), P("#4b5257", METAL)
     E = 20.0
-    corner = np.array([2350.0, 1718.0])
+    corner = np.array([2862.0, 2742.0])
 
     def fn(f, hw):
         d, s, X, Y = f["d"], f["s"], f["X"], f["Y"]
@@ -70,7 +70,7 @@ def szilagyi(S, ctx, plan):
     brick, brick2, stone, win = P("#b0583f"), P("#9c4b35"), P("#ddd2bb"), P("#2f3a44", WINDOW)
     tiles = zsolnay(P, ["#6a4a32", "#c9a14a", "#3f6a4a", "#8a5a36"], period=1.0, slope=1.0, kind="diamond")
     spire = P("#a35b44", ROOF)
-    front, cross = np.array([4157.0, 1372.0]), np.array([4132.0, 1362.0])
+    front, cross = np.array([4669.0, 2396.0]), np.array([4644.0, 2386.0])
     ang = math.atan2(*(cross - front)[::-1])
     fr = Frame(*front, b0, ang)  # +u from the Danube gable to the crossing among the three apses
 
@@ -124,7 +124,7 @@ def anna(S, ctx, plan):
     b0 = base_under(ctx, g, 0.3)
     cream, ochre, white, tile = P("#efe3c2"), P("#d9b878"), P("#f4f1e6"), P("#b5583a", ROOF)
     copper, copper2, win, door, gold = P("#5f8f7c", METAL), P("#4d7b69", METAL), P("#33404a", WINDOW), P("#4a3828"), P("#cfa94c", METAL)
-    front, apse = np.array([4245.0, 1163.0]), np.array([4218.0, 1206.0])
+    front, apse = np.array([4757.0, 2187.0]), np.array([4730.0, 2230.0])
     ang = math.atan2(*(apse - front)[::-1])
     fr = Frame(*front, b0, ang)
     L = float(np.hypot(*(apse - front)))
@@ -207,7 +207,7 @@ def teresa(S, ctx, plan):
     b0 = base_under(ctx, g, 0.3)
     white, ochre, tile, copper = P("#f2ede0"), P("#e0cc9c"), P("#a9563b", ROOF), P("#5c8a78", METAL)
     win, door, clock, gold = P("#33404a", WINDOW), P("#4a3828"), P("#f4f1e6"), P("#cfa94c", METAL)
-    front, apse = np.array([5336.0, 2683.0]), np.array([5389.0, 2683.0])
+    front, apse = np.array([5848.0, 3707.0]), np.array([5901.0, 3707.0])
     ang = math.atan2(*(apse - front)[::-1])
     fr = Frame(*front, b0, ang)
     L = float(np.hypot(*(apse - front)))

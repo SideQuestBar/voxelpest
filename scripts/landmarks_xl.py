@@ -49,8 +49,8 @@ def great_rock(S, ctx, g):
     for k in range(6):
         a, f, ph = rng.uniform(0, TAU), 0.07 * 1.8 ** k, rng.uniform(0, TAU)
         nz += np.sin((X * math.cos(a) + Y * math.sin(a)) * f + ph) / 1.6 ** k
-    peaks = ((7575.0, 2058.0, 34.0, 19.0), (7566.0, 2036.0, 26.0, 14.0), (7530.0, 2041.0, 22.0, 15.0),
-             (7512.0, 2052.0, 15.0, 9.0), (7584.0, 2075.0, 24.0, 10.0))
+    peaks = ((8087.0, 3082.0, 34.0, 19.0), (8078.0, 3060.0, 26.0, 14.0), (8042.0, 3065.0, 22.0, 15.0),
+             (8024.0, 3076.0, 15.0, 9.0), (8096.0, 3099.0, 24.0, 10.0))
     z = np.zeros_like(X)
     for px, py, h, r in peaks:
         z = np.maximum(z, h * np.exp(-((X - px) ** 2 + (Y - py) ** 2) / (2 * r * r)))
@@ -81,7 +81,7 @@ def palm_house(S, ctx, g):
     P = ctx["P"]
     b0 = base_under(ctx, g, 0.3)
     glass, glass2, rib, base = P("#9db8bc", GLASS), P("#87a5aa", GLASS), P("#eceee9", METAL), P("#cfc9bb")
-    fr = Frame(7162.0, 2062.0, b0, math.radians(47.5))  # +u along the wings
+    fr = Frame(7674.0, 3086.0, b0, math.radians(47.5))  # +u along the wings
 
     def fn(d, U, V, a, hw):
         inside = d > 0
@@ -93,7 +93,7 @@ def palm_house(S, ctx, g):
         return o
     block(S, g, fr, b0, 10.5, fn)
     # the central hall: a glass drum and dome over the front, facing the lake
-    fc = Frame(7174.5, 2049.5, b0, 0)
+    fc = Frame(7686.5, 3073.5, b0, 0)
     S.add(Lathe(fc, -0.5, 8.0, cyl(8.2), lambda u, v, w: np.where(np.mod(np.arctan2(v, u) * 24 / TAU, 1) < 0.18, rib, glass).astype(np.uint16), n=24))
     S.add(Lathe(fc, 8.0, 8.6, cyl(8.6), rib, n=24))
     S.add(Lathe(fc, 8.6, 16.5, dome(8.4, 2.0), lambda u, v, w: np.where(np.mod(np.arctan2(v, u) * 16 / TAU, 1) < 0.15, rib, glass2).astype(np.uint16), n=24))
@@ -104,7 +104,7 @@ def palm_house(S, ctx, g):
 def zoo_xl(S, ctx, plan):
     great_rock(S, ctx, keep(ctx, ROCK))
     palm_house(S, ctx, keep(ctx, PALM))
-    S.clear.append((7554.0, 2052.0, 40.0))
+    S.clear.append((8066.0, 3076.0, 40.0))
 
 
 # ------------------------------------------------------------------------------------------------ House of Music
@@ -177,7 +177,7 @@ def erzsebet(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, ERZSEBET)
     b0 = base_under(ctx, g, 0.3)
-    front, apse = np.array([6050.0, 3422.0]), np.array([6041.5, 3486.5])
+    front, apse = np.array([6562.0, 4446.0]), np.array([6553.5, 4510.5])
     ang = math.atan2(*(apse - front)[::-1])
     fr = Frame(*front, b0, ang)  # +u from the west front to the apse
     cream, cream2, stone = P("#e2d6b8"), P("#d3c4a1"), P("#ece4cf")
@@ -243,7 +243,7 @@ def erzsebet(S, ctx, plan):
     for k in range(3):
         S.add(Arch(fw, -0.4 + k * 0.4, 0.4 + k * 0.4, 0, 2.8 - k * 0.5, 0, 5.6, stone if k % 2 else cream2))
     S.add(Arch(fw, -0.6, 1.8, 0, 1.6, 0, 4.4, door, pointed=True))
-    S.clear.append((6044.0, 3452.0, 26.0))
+    S.clear.append((6556.0, 4476.0, 26.0))
 
 
 def gorog(S, ctx, plan):
@@ -252,7 +252,7 @@ def gorog(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, GOROG)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(6094.2, 3405.0, b0, math.radians(7.8))  # +u from the west front into the church
+    fr = Frame(6606.2, 4429.0, b0, math.radians(7.8))  # +u from the west front into the church
     ochre, white, tile = P("#e2c37d"), P("#f2eee4"), P("#8d4f3b", ROOF)
     copper, win, door = P("#5f8a77", METAL), P("#2f3438", WINDOW), P("#4b3527")
 
@@ -287,8 +287,8 @@ def jozsef(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, JOZSEF)
     b0 = base_under(ctx, g, 0.3)
-    front = np.array([5154.0, 4344.7])
-    back = np.array([5194.6, 4375.3])
+    front = np.array([5666.0, 5368.7])
+    back = np.array([5706.6, 5399.3])
     fr = Frame(*front, b0, math.atan2(*(back - front)[::-1]))  # +u from the front to the east end
     cream, white, ochre = P("#ece2c8"), P("#f6f2e8"), P("#dcc79a")
     slate, helm = P("#5d6869", ROOF), P("#3f4d4b", METAL)
@@ -333,7 +333,7 @@ def jozsef(S, ctx, plan):
     S.add(Arch(fw, -0.6, 0.6, 0, 1.4, 0, 3.8, door))
     S.add(Box(fw, -0.9, 0.4, -2.4, 2.4, 0, 6.6, white, mode="under"))
     S.add(Arch(fw, 0.0, 0.6, 0, 1.3, 9.0, 13.0, win, mode="paint", targets=[cream, white]))
-    S.clear.append((5174.0, 4360.0, 24.0))
+    S.clear.append((5686.0, 5384.0, 24.0))
 
 
 def onion_like(r):
@@ -360,17 +360,17 @@ def deli(S, ctx, plan):
         o = np.where(inside & ~edge & (hw >= E - 0.8) & (hw < E), np.where(np.mod(np.floor(U / 6) + np.floor(V / 6), 2) == 0, roof, roof2), o)
         o = np.where(inside & (hw >= -0.6) & (hw < 0.0), conc, o)
         return o
-    fr = Frame(3058.7, 914.1, b0, math.radians(-47.6))
+    fr = Frame(3570.7, 1938.1, b0, math.radians(-47.6))
     block(S, g, fr, b0, E + 1.0, fn)
     # the metro's rotunda on the square
-    frt = Frame(3057.0, 929.0, b0, 0)
+    frt = Frame(3569.0, 1953.0, b0, 0)
     S.add(Lathe(frt, -0.5, E + 2.5, cyl(5.8), lambda u, v, w: np.where(np.mod(w - b0, 2.0) < 0.5, rust, glass).astype(np.uint16), n=20))
     S.add(Lathe(frt, E + 2.5, E + 3.1, cyl(6.2), rust2, n=20))
     # canopies over the platforms: OSM's roof, and one over each platform A-G, on columns every 9 m
     canopy, col = P("#d9d7d0", ROOF), P("#4c5053", METAL)
     plats = [keep(ctx, DELI_ROOF)] + [a[3] for a in ctx["osm"].areas if a[2].get("railway") == "platform"
                                       and a[2].get("ref") in ("A", "B", "C", "D", "E", "F", "G")
-                                      and a[3].distance(Point(3004, 1100)) < 260]
+                                      and a[3].distance(Point(3516, 2124)) < 260]
     for pg in plats:
         pg = pg.buffer(0.8, join_style=2)
         zb = base_under(ctx, pg, 0.3)
@@ -380,7 +380,7 @@ def deli(S, ctx, plan):
         for u in np.arange(-Lp / 2 + 3, Lp / 2 - 2, 9.0):
             if pg.buffer(-0.5).contains(Point(*fp.xy(u, 0))):
                 S.add(Box(fp, u - 0.18, u + 0.18, -0.18, 0.18, 0.0, 5.0, col))
-    S.clear.append((3061.0, 966.0, 60.0))
+    S.clear.append((3573.0, 1990.0, 60.0))
 
 
 # ------------------------------------------------------------------------------------------------ the athletics stadium

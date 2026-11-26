@@ -7,16 +7,18 @@ on voxel faces instead of staircases: scripts/orient.py finds 41.5° (mod 90) fr
 of all wall length within 5° of a grid axis (10 % at 0°, the Lipótváros grid at 8.5° gets 10 %). With THETA = 41.5° the
 grid's +i runs towards Heroes' Square (ENE) and +j towards Petőfi Bridge (SSE).
 
-The box, 8064 x 7552 m (63 x 59 tiles of 128 m): Széll Kálmán tér, Margaret Bridge, Nyugati, Heroes' Square and the
-whole Városliget at the top, Kelenföld station and Etele tér, the National Athletics Centre, Rákóczi Bridge and the whole
-Népliget at the bottom, Kelenföld and the Buda hills on the left, Keleti and Puskás Aréna on the right; Déli, Gellért
-Hill and six Danube bridges in between.
+The box, 8576 x 8576 m (67 x 67 tiles of 128 m): the whole of Margaret Island up to Árpád Bridge, Újlipótváros and
+Rózsadomb at the top, Kelenföld station with its whole track field and Etele tér, the National Athletics Centre, Rákóczi
+Bridge and the whole Népliget at the bottom, Kelenföld and the Buda hills on the left, Keleti, the whole Városliget and
+Puskás Aréna on the right; Déli, Gellért Hill and seven Danube bridges in between.
 History: 4608 x 4608 m with the anchor at (1750, 2150) until early November 2026, when 384 rows went on at the top and
 768 columns on the right (5376 x 4992); on 21 November 2026 512 columns went on at the left and 1536 rows at the bottom
 (5888 x 6528); on 22 November 2026 2304 columns went on at the left, 128 came off the right (outer Zugló, already cut
-by the edge) and 1024 rows went on at the bottom, which keeps the web build under Cloudflare Pages' 20 000 files (19 870).
-Columns on the left move every grid i: the grid coordinates written into the landmark modules were moved with them each
-time (+512, then +2304 on each x).
+by the edge) and 1024 rows went on at the bottom, which kept the web build under Cloudflare Pages' 20 000 files (19 870);
+on 26 November 2026 1024 rows went on at the top (all of Margaret Island) and 512 columns on the left (Kelenföld
+station's track field and the M4 depot), with the site's tiles bundled four to a file (web/vite.config.js) to stay
+under that limit. Columns on the left move every grid i and rows at the top every grid j: the grid coordinates written
+into the landmark modules were moved with them each time (+512, then +2304 on each x; then +512 on x and +1024 on y).
 
 AOI=core (env) switches to a 2 x 2 km box around the Chain Bridge for fast iteration.
 """
@@ -30,8 +32,8 @@ WGS_TO_EOV = Transformer.from_crs(4326, 23700, always_xy=True)
 EOV_TO_WGS = Transformer.from_crs(23700, 4326, always_xy=True)
 
 ANCHOR = (19.0535, 47.4985)  # lon, lat at grid (I0, J0): Erzsébet tér
-W, D = 8064, 7552
-I0, J0 = 4566, 2534
+W, D = 8576, 8576
+I0, J0 = 5078, 3558
 if os.environ.get("AOI") == "core":
     ANCHOR = (19.0440, 47.4990)  # the Chain Bridge
     W, D = 2048, 2048

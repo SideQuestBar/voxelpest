@@ -254,7 +254,7 @@ def kelenfold_station(S, ctx, plan):
             o = np.where(inside & (hw >= E - 0.6) & (hw < E + rh + 0.4), np.where(np.mod(hw, 1.0) < 0.5, slate, slate2), o)
             return o
         painted(S, g, b0, E + 5.5, fn)
-    hub = Point(300, 3730)
+    hub = Point(812, 4754)
     for oid in KF_PLATFORMS:
         if oid not in area:
             continue
@@ -282,7 +282,7 @@ def etele_plaza(S, ctx, plan):
     white, white2, gold, beige, rust = P("#ecedeb"), P("#dcdedc"), P("#c9a85a"), P("#d9c7a2"), P("#b5563c")
     glass, glass2, roof, solar, grey = P("#4e7f9a", GLASS), P("#5f90aa", GLASS), P("#b8bbbc", ROOF), P("#2c3440", GLASS), P("#8c9194", CONCRETE)
     E = 24.0
-    sq = np.array([300.0, 3870.0])  # the corner on Etele tér
+    sq = np.array([812.0, 4894.0])  # the corner on Etele tér
 
     def fn(f, hw):
         d, s, X, Y = f["d"], f["s"], f["X"], f["Y"]
@@ -384,8 +384,8 @@ def allee(S, ctx, plan):
     grey, grey2, brick, glass, glass2 = P("#c9cccc"), P("#b6baba"), P("#a3503c"), P("#4f6f80", GLASS), P("#bcd3da", GLASS)
     roof, steel = P("#9fa3a4", ROOF), P("#7d8387", METAL)
     E = 19.0
-    A, C = np.array([2505.0, 4300.0]), np.array([2635.0, 4196.0])
-    M = np.array([2564.0, 4304.0])
+    A, C = np.array([3017.0, 5324.0]), np.array([3147.0, 5220.0])
+    M = np.array([3076.0, 5328.0])
     t = np.linspace(0, 1, 40)[:, None]
     curve = LineString((1 - t) ** 2 * A + 2 * (1 - t) * t * M + t ** 2 * C)
 
@@ -436,7 +436,7 @@ def a38_gangways(S, ctx, plan):
     P = ctx["P"]
     lines = {oid: ln for oid, t, ln in ctx["osm"].lines if oid in A38_WAYS}
     steel, steel2, deck, roof = P("#5d6266", METAL), P("#7b8085", METAL), P("#8b8f90", CONCRETE), P("#9da2a5", ROOF)
-    ship = np.array([3479.0, 4836.0])
+    ship = np.array([3991.0, 5860.0])
     for oid, ln in lines.items():
         a, b = np.array(ln.coords[0]), np.array(ln.coords[-1])
         if np.hypot(*(a - ship)) < np.hypot(*(b - ship)):  # a: the quay end
@@ -480,7 +480,7 @@ def rakoczi_masts(S, ctx, plan):
         c = area[oid][3].centroid
         z0 = deck_top(c.x, c.y) if deck_top is not None else ctx["WLr"] + 14.0
         # the masts stand on the deck's upstream edge and lean out over the roadway
-        p0 = np.array([2987.0, 5524.0])
+        p0 = np.array([3499.0, 6548.0])
         axis = np.array([3346 - 2987, 5864 - 5524], float)
         axis /= np.linalg.norm(axis)
         off = np.array([c.x, c.y]) - p0

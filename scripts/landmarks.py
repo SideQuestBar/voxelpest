@@ -372,7 +372,7 @@ def zsolnay(P, colours, period=1.5, slope=1.0, kind="chevron"):
 
 
 # ------------------------------------------------------------------------------------------------ plan
-PARLIAMENT, BASILICA, MATTHIAS, PALACE = 3199085, 20593057, 37135081, 6486918
+PARLIAMENT, BASILICA, MATTHIAS, PALACE = 3199085, 313947864, 37135081, 6486918  # the Basilica was relation 20593057 until November 2026
 BASTION, MARKET, SYNAGOGUE, MILLENNIUM = 17948384, 24323859, 223530620, 6932527
 CHAIN, LIBERTY_BR, ELISABETH = "Széchenyi lánchíd", "Szabadság híd", "Erzsébet híd"
 PUSKAS, PUSKAS_LOW = 8766354, 10981440  # the Puskás Aréna's grandstand ring and its lower tier

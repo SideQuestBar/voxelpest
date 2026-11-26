@@ -31,7 +31,7 @@ def sandor(S, ctx, plan):
     red-brown tiled hipped roof. The ground falls away towards the Danube, so the east side shows more storeys."""
     P = ctx["P"]
     g = keep(ctx, SANDOR)
-    a, b = (3626.3, 1830.7), (3667.2, 1842.6)
+    a, b = (4138.3, 2854.7), (4179.2, 2866.6)
     fr = edge_frame(a, b, 0)
     gx, gy = fr.ox - 6 * math.sin(fr.ang), fr.oy + 6 * math.cos(fr.ang)
     b0 = ctx["ground_m"](gx, gy)
@@ -116,10 +116,10 @@ def ch(S, ctx, plan):
     win = P("#34393b", WINDOW)
     hallr, glass = P("#c9cdcc", METAL), P("#9fb4b8", METAL)
     E = 20.5
-    pav = (3444.0, 3905.0)  # the south front's centre pavilion under its dark hipped roof
+    pav = (3956.0, 4929.0)  # the south front's centre pavilion under its dark hipped roof
 
     def wall(d, a_, hw):
-        x = (a_ - 7336.0)
+        x = (a_ - 8872.0)
         stone = (hw < 5.0)
         band = ((hw > 5.0) & (hw < 5.6)) | ((hw > 15.4) & (hw < 15.9))
         pil = np.mod(x, 7.4) < 1.0
@@ -128,7 +128,7 @@ def ch(S, ctx, plan):
         return np.where(rus, cream2, np.where(stone, socle, np.where(band | pil, cream, br)))
     x0f, y0f, X, Y = grid_of(g, 1.0)
     d = dist_in(g, X, Y)
-    near = (Y > 3893.0).astype(np.float32)  # the south front and the curved corner, in cream stone
+    near = (Y > 4917.0).astype(np.float32)  # the south front and the curved corner, in cream stone
     fields = dict(d=d, a=(X + Y).astype(np.float32), c=near)
     pat = np.array([tile, tile2], np.uint16)
 

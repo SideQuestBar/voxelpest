@@ -211,7 +211,7 @@ def groupama(S, ctx, plan):
     skin, skin2, dark, solar, letter = P("#a8b0b3", GLASS), P("#98a1a4", GLASS), P("#3a3f43"), P("#25292e", GLASS), P("#f4f4f2", ROOF)
     pu = lambda X, Y: np.abs((X - pcx) * math.cos(pang) + (Y - pcy) * math.sin(pang)) - Lp / 2
     pv = lambda X, Y: np.abs(-(X - pcx) * math.sin(pang) + (Y - pcy) * math.cos(pang)) - Wp / 2
-    marks = [(5144.5, 6557.0), (5250.0, 6585.0)]
+    marks = [(5656.5, 7581.0), (5762.0, 7609.0)]
 
     def letters(X, Y):
         m = np.zeros(X.shape, np.float32)

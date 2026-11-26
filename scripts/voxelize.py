@@ -1169,7 +1169,7 @@ if gel is not None:
 # across Lágymányos from Szent Gellért tér, FABDEM has it at 119 m from 60 m out of the square (107.5 m): a 12 m ramp.
 # The ground is lowered (never raised) to the street's level, rising gently with the distance from the square, in full
 # within 15 m of the street and fading out 60 m from it (behind the houses on either side)
-STREETS = [("Bartók Béla út", (3434.0, 3787.0), 108.3, 0.0025)]
+STREETS = [("Bartók Béla út", (3946.0, 4811.0), 108.3, 0.0025)]
 for nm_, (sx_, sy_), e0_, k_ in STREETS:
     ways_ = [ln for oid, t, ln in osm.lines if t.get("name") == nm_ and t.get("highway") and not t.get("bridge")
              and not t.get("tunnel")]
@@ -2419,15 +2419,16 @@ for key, args in {"parliament": ("Parliament", "Országház", (-1, 0.15), 520, 0
                   "kfpower": ("Kelenföld Power Station", "Kelenföldi Erőmű", (1, -0.2), 380, 0.3),
                   "bikas": ("Bikás Park", "Bikás park", (0.5, -1), 330, 0.45),
                   "bmecampus": ("BME Campus", "Budapesti Műszaki és Gazdaságtudományi Egyetem", (1, 0.3), 620, 0.35),
-                  "margitgimi": ("Szent Margit Gimnázium", "Szent Margit Gimnázium", (-0.2, 1), 180, 0.22)}.items():
+                  "margitgimi": ("Szent Margit Gimnázium", "Szent Margit Gimnázium", (-0.2, 1), 180, 0.22),
+                  "margitsziget": ("Margaret Island", "Margit-sziget", (0.35, -1), 1500, 0.4)}.items():
     v = view(*args)
     if v:
         views[key] = v
 for key, label, tx, ty, dirs, dist, el in (  # places with no label of their own to aim at
-        ("etele", "Etele Plaza", 411.0, 3975.0, (-0.6, 1), 260, 0.3),
-        ("batthyany", "Batthyány tér", 4240.0, 1180.0, (1, 0.2), 230, 0.3),
-        ("szilagyi", "Szilágyi Dezső tér Church", 4142.0, 1367.0, (1, 0.5), 170, 0.28),
-        ("teresa", "St Teresa of Avila", 5362.0, 2683.0, (-1, 0.3), 150, 0.3)):
+        ("etele", "Etele Plaza", 923.0, 4999.0, (-0.6, 1), 260, 0.3),
+        ("batthyany", "Batthyány tér", 4752.0, 2204.0, (1, 0.2), 230, 0.3),
+        ("szilagyi", "Szilágyi Dezső tér Church", 4654.0, 2391.0, (1, 0.5), 170, 0.28),
+        ("teresa", "St Teresa of Avila", 5874.0, 3707.0, (-1, 0.3), 150, 0.3)):
     zc_ = float(g[int(ty), int(tx)])
     d_ = dirs[0] * EAST + dirs[1] * NORTH
     d_ /= np.linalg.norm(d_)

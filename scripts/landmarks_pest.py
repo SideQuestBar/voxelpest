@@ -125,7 +125,7 @@ def corvin_plaza(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, CORVIN_PLAZA)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(4725.0, 4462.8, b0, math.radians(44.0))
+    fr = Frame(5237.0, 5486.8, b0, math.radians(44.0))
     trav, trav2, glass, glass2 = P("#ddd2bb"), P("#cbbfa5"), P("#7d97a2", GLASS), P("#6a8590", GLASS)
     roofg, roofp, roofc = P("#6f7f4e", ROOF), P("#b8ae98", ROOF), P("#a8a9a5", ROOF)
     purple, gold = P("#6d2a6e", METAL), P("#e0a43a", METAL)
@@ -145,11 +145,11 @@ def corvin_plaza(S, ctx, plan):
         return o
     block(S, g, fr, b0, E + 2.0, fn)
     # the glass corner on Futó utca: a faceted glass prism over the entrance, the logo's dots on it
-    fc = Frame(4723.5, 4467.0, b0, math.radians(-111.4))  # +u out of the corner
-    S.add(Lathe(Frame(4723.5, 4467.0, b0), 0.0, E + 3.0, cyl(5.0), glass, n=6))
+    fc = Frame(5235.5, 5491.0, b0, math.radians(-111.4))  # +u out of the corner
+    S.add(Lathe(Frame(5235.5, 5491.0, b0), 0.0, E + 3.0, cyl(5.0), glass, n=6))
     for k, (dv, dw) in enumerate(((0, 0), (1.3, 0.8), (-1.3, 0.8), (1.3, -0.8), (-1.3, -0.8), (0, 1.6), (0, -1.6))):
         S.add(Ellipsoid(fc.at(5.1, dv, E - 3.0 + dw), 0.25, 0.55, 0.55, gold if k == 0 else purple))
-    S.clear.append((4766.0, 4560.0, 70.0))
+    S.clear.append((5278.0, 5584.0, 70.0))
 
 
 # ------------------------------------------------------------------------------------------------ Museum of Applied Arts
@@ -161,7 +161,7 @@ def iparmu(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, IPARMU)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(4456.0, 4300.0, b0, math.radians(3.0))
+    fr = Frame(4968.0, 5324.0, b0, math.radians(3.0))
     brick, brick2, cream = P("#e2cf98"), P("#d4bd80"), P("#efe5cc")
     zg, zy, zb, zr = P("#3e8b5a", ROOF), P("#d5b54b", ROOF), P("#3a6f95", ROOF), P("#b2553c", ROOF)
     win, glass = P("#323b3d", WINDOW), P("#a6bec2", GLASS)
@@ -195,35 +195,35 @@ def iparmu(S, ctx, plan):
     windows(S, g, b0, [(1.2, 3.6)], tg, win, every=3.4, half=0.6, min_len=4.0, arch=False)
     windows(S, g, b0, [(5.8, 10.6), (12.6, 16.6)], tg, win, every=3.4, half=0.75, min_len=4.0, arch=True)
     # the main dome over the entrance on Üllői út, striped in green and yellow tiles, a lantern on top
-    fd = Frame(4502.0, 4296.0, b0, 0)
+    fd = Frame(5014.0, 5320.0, b0, 0)
     S.add(Lathe(fd, E - 2.0, E + 4.0, cyl(6.4), brick, n=8))
     S.add(Lathe(fd, E + 4.0, E + 4.8, cyl(6.8), cream, n=8))
     S.add(Lathe(fd, E + 4.8, E + 12.5, dome(6.6, 1.6, 1.2), zg, n=8))
     for k in range(8):
         t = (k + 0.5) * math.pi / 4
-        S.add(Box(Frame(4502.0 + 3.4 * math.cos(t), 4296.0 + 3.4 * math.sin(t), b0, t), -2.6, 2.6, -0.5, 0.5,
+        S.add(Box(Frame(5014.0 + 3.4 * math.cos(t), 5320.0 + 3.4 * math.sin(t), b0, t), -2.6, 2.6, -0.5, 0.5,
                   E + 4.8, E + 10.5, zy, mode="paint", targets=[zg]))
     S.add(Lathe(fd, E + 12.0, E + 14.5, cyl(1.3), zy, n=8))
     S.add(Lathe(fd, E + 14.5, E + 17.0, cone(1.5, 0.08), zg, n=8))
     S.add(Ellipsoid(fd.at(0, 0, E + 17.2), 0.3, 0.3, 0.3, gold))
     # the entrance's portal under it: a tall arch in cream ceramic
-    fe = Frame(4509.5, 4300.0, b0, math.radians(-77.0 + 90))
+    fe = Frame(5021.5, 5324.0, b0, math.radians(-77.0 + 90))
     S.add(Box(fe, -0.3, 1.2, -4.8, 4.8, 0.0, 13.0, cream))
     S.add(Arch(fe, 0.2, 1.3, 0.0, 2.6, 0.0, 7.0, win))
     S.add(Arch(fe, 1.0, 1.3, 0.0, 3.2, 0.0, 7.6, zy, mode="paint", targets=[cream]))
     # the tower over the north range and the corner turrets
-    ft = Frame(4457.0, 4276.0, b0, math.radians(5.0))
+    ft = Frame(4969.0, 5300.0, b0, math.radians(5.0))
     S.add(Box(ft, -3.2, 3.2, -3.2, 3.2, -1.0, E + 7.0, brick))
     S.add(Box(ft, -3.5, 3.5, -3.5, 3.5, E + 6.4, E + 7.4, cream))
     for k in range(4):
         windows_on(S, side(ft, k), 3.2, -2.0, 2.0, 2.0, [(E + 1.5, E + 5.5)], 0.6, win, [brick])
     S.add(Lathe(ft, E + 7.4, E + 19.0, cone(4.4, 0.1), zg, n=4, rot=math.pi / 4))
     S.add(Lathe(ft, E + 7.4, E + 9.0, cyl(4.0), zy, n=4, rot=math.pi / 4, mode="paint", targets=[zg]))
-    for x, y in ((4431.0, 4266.0), (4483.0, 4266.0), (4426.0, 4294.0), (4506.0, 4346.0), (4443.0, 4347.0)):
+    for x, y in ((4943.0, 5290.0), (4995.0, 5290.0), (4938.0, 5318.0), (5018.0, 5370.0), (4955.0, 5371.0)):
         S.add(Lathe(Frame(x, y, b0), E - 2.0, E + 3.0, cyl(2.2), brick, n=8))
         S.add(Lathe(Frame(x, y, b0), E + 3.0, E + 6.5, dome(2.4, 1.6, 0.3), zg, n=8))
         S.add(Lathe(Frame(x, y, b0), E + 6.3, E + 7.8, cone(0.4, 0.05), gold))
-    S.clear.append((4466.0, 4305.0, 30.0))
+    S.clear.append((4978.0, 5329.0, 30.0))
 
 
 # ------------------------------------------------------------------------------------------------ Semmelweis
@@ -234,7 +234,7 @@ def semmelweis(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, SEMMELWEIS)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(4510.35, 4160.6, b0, math.radians(-12.9))  # +u from the front on Üllői út into the block
+    fr = Frame(5022.35, 5184.6, b0, math.radians(-12.9))  # +u from the front on Üllői út into the block
     brick, brick2, stone, stone2 = P("#b25a40"), P("#9f4e37"), P("#ddd5c3"), P("#c9c0ad")
     cream, cream2 = P("#e9dcb8"), P("#d8c9a2")
     tile, slate = P("#9c4a36", ROOF), P("#7b8287", ROOF)
@@ -264,7 +264,7 @@ def semmelweis(S, ctx, plan):
     S.add(Box(ff, -0.2, 0.9, -3.0, 3.0, 0.0, 6.6, stone))  # the portal
     S.add(Arch(ff, 0.3, 1.0, 0.0, 1.6, 0.0, 3.6, win))
     S.add(Box(ff, -0.2, 1.4, -3.4, 3.4, 6.6, 7.1, stone))  # its balcony
-    S.clear.append((4534.0, 4155.0, 22.0))
+    S.clear.append((5046.0, 5179.0, 22.0))
 
 
 # ------------------------------------------------------------------------------------------------ Slovak church
@@ -310,7 +310,7 @@ def slovak(S, ctx, plan):
     S.add(Arch(fn_, -0.6, 0.4, 0.0, 1.3, 0.0, 3.0, door))
     S.add(Arch(fn_, 0.0, 0.5, 0.0, 1.9, 0.0, 3.3, white, mode="paint", targets=[ochre, white]))
     # the gateway through Rákóczi út 57 along OSM's passage, then the court's paving to the church door
-    gate = LineString([(5734.3, 3614.5), (5727.6, 3633.0)])
+    gate = LineString([(6246.3, 4638.5), (6239.6, 4657.0)])
     (x0, y0), (x1, y1) = gate.coords
     fg = Frame(x0, y0, 0, math.atan2(y1 - y0, x1 - x0))
     zg = ctx["ground_m"](x0 - 2 * fg.ca, y0 - 2 * fg.sa)
@@ -325,8 +325,8 @@ def slovak(S, ctx, plan):
     court = LineString([(x1, y1), (dx, dy)]).buffer(1.8, cap_style=2)
     zc = min(zg, b0)
     S.add(Poly(court, zc - 0.6, b0 + 0.05, pave))
-    S.clear.append((5726.0, 3640.0, 12.0))
-    S.clear.append((5719.0, 3662.0, 20.0))
+    S.clear.append((6238.0, 4664.0, 12.0))
+    S.clear.append((6231.0, 4686.0, 20.0))
 
 
 # ------------------------------------------------------------------------------------------------ St Margaret, Lehel tér
@@ -337,7 +337,7 @@ def margit(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, MARGIT)
     b0 = base_under(ctx, g, 0.4)
-    fr = Frame(6294.15, 1367.7, b0, math.radians(-17.5))  # +u from the west front towards the apse
+    fr = Frame(6806.15, 2391.7, b0, math.radians(-17.5))  # +u from the west front towards the apse
     stone, stone2, stone3 = P("#dccb9f"), P("#cbb98b"), P("#b9a679")
     slate, slate2 = P("#5c6168", ROOF), P("#6a7077", ROOF)
     win, door = P("#2f3436", WINDOW), P("#4a3a2c")
@@ -389,7 +389,7 @@ def margit(S, ctx, plan):
         S.add(Arch(fw, -0.2 + k * 0.0, 0.5 + k * 0.45, 0.0, 3.2 - k * 0.5, 0.0, 4.4, stone3 if k % 2 else stone))
     S.add(Arch(fw, -0.6, 2.4, 0.0, 1.5, 0.0, 3.4, door))
     S.add(Arch(fw, -0.6, 0.3, 0.0, 1.8, 10.0, 11.8, win, mode="paint", targets=tg))  # the rose window's place
-    S.clear.append((6316.0, 1360.0, 32.0))
+    S.clear.append((6828.0, 2384.0, 32.0))
 
 
 # ------------------------------------------------------------------------------------------------ Arena Mall
@@ -399,7 +399,7 @@ def arena(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, ARENA)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(6544.4, 4379.6, b0, math.radians(41.6))  # +u along Kerepesi út from the north-west end
+    fr = Frame(7056.4, 5403.6, b0, math.radians(41.6))  # +u along Kerepesi út from the north-west end
     white, white2, grey = P("#e8e8e4"), P("#d5d6d2"), P("#8b9094")
     glass, glass2 = P("#7a93a3", GLASS), P("#5f7584", GLASS)
     roof, roof2, dark = P("#b9bcbc", ROOF), P("#b1b4b4", ROOF), P("#4f5559", ROOF)
@@ -420,15 +420,15 @@ def arena(S, ctx, plan):
                                                            roof, roof2)), o)
     block(S, g, fr, b0, Ec + 1.5, fn)
     # the three domes over the courts
-    for x, y in ((6671.4, 4413.9), (6719.3, 4456.0), (6767.2, 4499.7)):
+    for x, y in ((7183.4, 5437.9), (7231.3, 5480.0), (7279.2, 5523.7)):
         e = shapely.affinity.rotate(shapely.affinity.scale(Point(x, y).buffer(1.0, 32), 8.0, 6.4), 41.6, origin=(x, y))
         S.add(Poly(e, b0 + E - 0.5, b0 + E + 1.6, white2))
         S.add(Ellipsoid(Frame(x, y, b0 + E + 1.6, fr.ang), 7.4, 5.8, 2.2, glass2))
     # the main entrance on Kerepesi út: a glass bay through the box's height with the name over it
-    fe = Frame(6719.15, 4372.2, b0, math.radians(41.7 - 90.0))  # +u out of the wall facing the stairs
+    fe = Frame(7231.15, 5396.2, b0, math.radians(41.7 - 90.0))  # +u out of the wall facing the stairs
     S.add(Box(fe, -2.5, 0.8, -9.0, 9.0, 0.0, E - 1.0, glass))
     letters(S, fe, 0.8, 0.0, E - 6.5, "ARENA", 3.4, white, step=3.6)
-    S.clear.append((6716.0, 4455.0, 120.0))
+    S.clear.append((7228.0, 5479.0, 120.0))
 
 
 # ------------------------------------------------------------------------------------------------ MTK Sportpark
@@ -438,7 +438,7 @@ def mtk(S, ctx, plan):
     P = ctx["P"]
     g = keep(ctx, MTK)
     b0 = base_under(ctx, g, 0.3)
-    fr = Frame(7015.6, 4689.9, b0, math.radians(109.0))  # +u along the long west side from the north
+    fr = Frame(7527.6, 5713.9, b0, math.radians(109.0))  # +u along the long west side from the north
     panel, panel2, white = P("#d6d0c2"), P("#c3bcab"), P("#ecebe6")
     glass, glass2 = P("#7f97a1", GLASS), P("#647b86", GLASS)
     roof, sky, plinth = P("#c7bea8", ROOF), P("#3c4a52", GLASS), P("#9b9488")
@@ -458,7 +458,7 @@ def mtk(S, ctx, plan):
         o = np.where(rf, np.where(stripes, sky, roof), o)
         return np.where(inside & shell & (hw >= top) & (hw < top + 0.9), white, o)
     block(S, g, fr, b0, E + 1.5, fn)
-    S.clear.append((7029.0, 4755.0, 70.0))
+    S.clear.append((7541.0, 5779.0, 70.0))
 
 
 BUILDERS = [("Corvin Cinema", corvin_mozi), ("Corvin Plaza", corvin_plaza), ("Museum of Applied Arts", iparmu),

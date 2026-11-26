@@ -1,8 +1,8 @@
 // WGS84 (GPS) -> the map's grid in metres (x = column, z = row, as the scene's x and z): a quadratic fitted to pyproj's
 // EPSG:4326 -> 23700 turned by THETA (scripts/aoi.py) by scripts/geo_fit.py; under 1 mm off over the map and 1 km round it.
-const LON0 = 19.0535, LAT0 = 47.4985, KU = 11.542062, KV = 17.102235;
-const CX = [4565.999950, 4307.144593, 0.035193, 4889.171556, -5.397766, 2.397507];
-const CZ = [2534.000139, -4868.959155, -0.039727, 4325.024885, -4.774131, -2.710688];
+const LON0 = 19.0535, LAT0 = 47.4985, KU = 10.671693, KV = 15.762486;
+const CX = [5077.999900, 4673.234799, 0.041522, 5287.925804, -6.333709, 2.804713];
+const CZ = [3558.000089, -5282.801367, -0.046860, 4677.767911, -5.602952, -3.170514];
 
 export function wgsToGrid(lon: number, lat: number): [number, number] {
   const u = (lon - LON0) * KU, v = (lat - LAT0) * KV;
