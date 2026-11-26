@@ -28,7 +28,6 @@ import { Streaks } from './streaks';
 const G = 9.81;
 const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
 const IDLE = 1.5;                                     // seconds after the last drag before the camera swings back
-const DRONE_CAM: [number, number, number] = [3.4, 1.1, 3];   // the drone seen from outside: back, up, look ahead
 const ABOVE = { drone: 0, plane: 150, heli: 90 };     // m higher than the last clear spot after a crash
 
 // the plane's wing: dynamic pressure × area per kg, per (m/s)²; lift from the angle of attack (rad), stalling at 15°
@@ -102,8 +101,9 @@ export class Flyer {
   private camSet = false;
   private active = false;
   private readonly camOff = new THREE.Vector3();
-  // the camera swung round: yaw (radians round the aircraft), pitch (added elevation), zoom (× the distance)
-  private orbit = { yaw: 0, pitch: 0, zoom: 1, idle: IDLE, outside: false };
+  // the camera swung round (not the drone's: it stays first person): yaw (radians round the aircraft), pitch (added
+  // elevation), zoom (× the distance)
+  private orbit = { yaw: 0, pitch: 0, zoom: 1, idle: IDLE };
   private drag: { id: number; x: number; y: number } | null = null;
   private fovKick = 0;
   // the drone's link: how much of the way home is blocked, glitches now and then
@@ -121,7 +121,7 @@ export class Flyer {
   constructor(private readonly scene: THREE.Scene, private readonly camera: THREE.PerspectiveCamera, private readonly world: World,
     private readonly input: Input, private readonly dom: HTMLElement) {
     addEventListener('pointerdown', (e) => {
-      if (!this.active || this.drag) return;
+      if (!this.active || this.drag || this.fpv) return;
       const t = e.target as Element | null;
       if (e.pointerType === 'mouse' ? t !== dom || e.button !== 0 : !(t === dom || t?.closest?.('.label, #sq-pin'))) return;
       this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
@@ -137,7 +137,7 @@ export class Flyer {
     const up = (e: PointerEvent) => {
       if (this.drag?.id !== e.pointerId) return;
       this.drag = null;
-      if (this.active) dom.style.cursor = 'grab';
+      this.cursor();
     };
     addEventListener('pointerup', up);
     addEventListener('pointercancel', up);
@@ -166,7 +166,7 @@ export class Flyer {
     this.kind = k;
     this.spec = AIR[k];
     this.craft = this.use(k);
-    if (on) this.place(this.pos.x, this.pos.y, this.pos.z, this.heading(), true);
+    if (on) { this.drag = null; this.cursor(); this.place(this.pos.x, this.pos.y, this.pos.z, this.heading(), true); }
     this.onKind?.(k);
   }
 
@@ -204,7 +204,7 @@ export class Flyer {
     if (!keepHeight) { this.home.copy(this.pos); this.flown = 0; }
     this.safe = { p: this.pos.clone(), yaw: heading, t: 0 };
     this.camSet = false;
-    if (!keepHeight) this.orbit = { yaw: 0, pitch: 0, zoom: this.orbit.zoom, idle: IDLE, outside: false };
+    if (!keepHeight) this.orbit = { yaw: 0, pitch: 0, zoom: this.orbit.zoom, idle: IDLE };
     this.pose();
     this.follow(0);
   }
@@ -225,8 +225,7 @@ export class Flyer {
 
   show(on: boolean, night: number) {
     if (!this.craft) this.setKind(this.kind);
-    if (on !== this.active) { this.drag = null; this.dom.style.cursor = on ? 'grab' : ''; }
-    this.active = on;
+    if (on !== this.active) { this.active = on; this.drag = null; this.cursor(); }
     this.craft!.g.visible = on && !this.fpv;
     for (const m of this.craft!.glow) m.emissiveIntensity = 0.4 + 2.2 * night;
     const M = mats();
@@ -330,16 +329,19 @@ export class Flyer {
     return fl ? { top: fl.top, water: fl.mat === MAT.WATER } : { top: this.world.groundAt(x, z) ?? 0, water: false };
   }
 
-  // the drone flown from its camera (not swung round to be seen from outside)
-  get fpv() { return this.kind === 'drone' && !this.orbit.outside; }
+  // the drone is flown from its own camera, always: no drag or wheel moves it
+  get fpv() { return this.kind === 'drone'; }
+
+  // a hand over the picture where a drag swings the camera
+  private cursor() { this.dom.style.cursor = this.active && !this.fpv ? 'grab' : ''; }
 
   private swing(dy: number, dp: number, zoom: number) {
+    if (this.fpv) return;
     const o = this.orbit;
     o.yaw = wrapPi(o.yaw + dy);
     o.pitch = clamp(o.pitch + dp, -0.9, 1.2);
     o.zoom = clamp(o.zoom * zoom, 0.45, 3);
     o.idle = 0;
-    if (this.kind === 'drone') o.outside = true;
   }
 
   // gusts: stronger low over the roofs, a slow drift of three sines in each direction
@@ -525,13 +527,12 @@ export class Flyer {
   private follow(dt: number) {
     const cam = this.camera, o = this.orbit;
     const V = this.vel.length(), fast = smoothstep(15, 75, V);
-    // after a rest from dragging the camera swings back behind; the drone back to its own camera once it is there
+    // after a rest from dragging the camera swings back behind
     if (this.drag) o.idle = 0;
     o.idle += dt;
     if (o.idle > IDLE) {
       const e = 1 - Math.exp(-dt * (1.2 + 2.5 * smoothstep(2, 30, V)) * smoothstep(IDLE, IDLE + 0.6, o.idle));
       o.yaw -= o.yaw * e; o.pitch -= o.pitch * e;
-      if (o.outside && Math.abs(o.yaw) < 0.03 && Math.abs(o.pitch) < 0.03) { o.outside = false; this.camSet = false; }
     }
     let fov = this.spec.fov;
     if (this.fpv) {
@@ -545,8 +546,7 @@ export class Flyer {
       cam.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(Y, -Math.PI / 2));
       if (this.crash > 0) cam.position.y += Math.sin(this.t * 40) * 0.02;
     } else {
-      const drone = this.kind === 'drone';
-      const [back, up, ahead] = drone ? DRONE_CAM : this.spec.cam;
+      const [back, up, ahead] = this.spec.cam;
       const f = X.clone().applyQuaternion(this.q), bu = Y.clone().applyQuaternion(this.q);
       const flat = new THREE.Vector3(f.x, this.kind === 'plane' ? f.y * 0.6 : 0, f.z).normalize();
       // further back, wider and shakier the faster it goes; a kick of field of view as it speeds up
@@ -564,11 +564,11 @@ export class Flyer {
       if (!this.camSet) { this.camOff.copy(off); this.camLook.copy(look); this.camSet = true; }
       this.camPos.copy(this.pos).add(this.camOff);
       const fl = this.world.floor(this.camPos.x, this.camPos.z, this.camPos.y + 0.5, 0);
-      if (fl && this.camPos.y < fl.top + (drone ? 0.6 : 1.5)) this.camPos.y = fl.top + (drone ? 0.6 : 1.5);
+      if (fl && this.camPos.y < fl.top + 1.5) this.camPos.y = fl.top + 1.5;
       const stall = this.kind === 'plane' && !this.onGround ? this.telemetryStall() : 0;
       const agl = this.pos.y - Math.max(this.groundUnder(), 0);
       const amp = (this.onGround ? 0.02 * smoothstep(2, 30, V)
-        : 0.03 + 0.16 * fast * fast + 0.12 * fast * smoothstep(80, 15, agl) + 0.35 * stall + (this.kind === 'heli' ? 0.03 : 0)) * (drone ? 0.2 : 1);
+        : 0.03 + 0.16 * fast * fast + 0.12 * fast * smoothstep(80, 15, agl) + 0.35 * stall + (this.kind === 'heli' ? 0.03 : 0));
       const sh = new THREE.Vector3(this.shake(9, 1), this.shake(11, 2), this.shake(8, 3)).multiplyScalar(amp);
       cam.position.copy(this.camPos).add(sh);
       // the camera leans a little with the bank (not when swung round)
@@ -578,7 +578,7 @@ export class Flyer {
       cam.lookAt(this.camLook.clone().addScaledVector(sh, 0.5));
       const fwdAcc = dt > 0 ? this.acc.dot(f) : 0;
       this.fovKick += (clamp(fwdAcc / 4, -1, 1) - this.fovKick) * (1 - Math.exp(-dt * 2));
-      fov = (drone ? 70 : fov) + 10 * fast + 3 * this.fovKick;
+      fov += 10 * fast + 3 * this.fovKick;
     }
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
   }
