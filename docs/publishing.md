@@ -42,10 +42,10 @@ The web viewer in an [Electron](https://www.electronjs.org) window, for WebGPU
 full screen. Esc, or a controller's Menu button, opens a menu to leave full screen (F11 too), go to SideQuest Bar or
 quit. Its bottom bar names the map's data sources where the website shows the help line; the help (the ? button)
 covers the map, walking and driving for the mouse and keys, a touch screen or a controller. The viewer's URL
-parameters can be given as arguments: `./voxelpest-1.1.1-x86_64.AppImage view=parliament hour=20 lang=hu`. Links
+parameters can be given as arguments: `./voxelpest-1.2.0-x86_64.AppImage view=parliament hour=20 lang=hu`. Links
 open in the desktop's browser. For a kiosk, `fullscreen=always` takes leaving full screen out of the menu (and the
 app refuses it), and `nolink=true` turns every link out of the app into plain text (and the app opens none). `ui=0` hides everything
-over the picture, as on the website (`./voxelpest-1.1.1-x86_64.AppImage ui=0 view=parliament`); Esc still opens the
+over the picture, as on the website (`./voxelpest-1.2.0-x86_64.AppImage ui=0 view=parliament`); Esc still opens the
 menu to quit.
 `./bv desktop dev` runs it on the viewer's dev server, in a window, with devtools on F12. It runs on Wayland as it
 is; if it ever stays on the loading screen, `--ozone-platform=x11` runs it through XWayland.
@@ -55,7 +55,7 @@ a version tag makes a GitHub release of it:
 
 ```
 # bump "version" in desktop/package.json and web/package.json (the workflow checks both against the tag), commit
-git tag v1.1.1 && git push origin master v1.1.1
+git tag v1.2.0 && git push origin master v1.2.0
 ```
 
 The release carries the AppImage and `latest-linux.yml`, the feed the installed apps read: on start the app asks

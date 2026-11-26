@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-26
+
 ### Added
 
 - Map: grown to 8.6 × 8.6 km: 1 km more at the top takes in all of Margaret Island up to Árpád Bridge, Újlipótváros and
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Stock Exchange, National Bank, US Embassy, Postal Savings Bank, Liszt Academy, New York Palace, Vígszínház, Kerepesi
   Cemetery's mausoleums, the Ludovika, the National Theatre, Papp László Sportaréna, the Northern Vehicle Repair
   Works, St Emeric's on Villányi út, Millenáris and the Mammut.
+- Website: published to Cloudflare Pages from GitHub Actions on a version tag, alongside the desktop app's release.
 
 ### Changed
 
@@ -31,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Map: a row of the WestEnd roof garden's deck furniture stood 2.3 km south of it since the map grew on 22 November.
 - Map: St Stephen's Basilica follows OpenStreetMap's new outline of it (it was skipped with the fresh data).
+- Map: the build asks Wikidata again when its answer stops short, instead of failing.
 
 ## [1.1.1] - 2026-11-26
 
@@ -172,7 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release.
 - Version numbers on the about page.
 
-[Unreleased]: https://github.com/SideQuestBar/voxelpest/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/SideQuestBar/voxelpest/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/SideQuestBar/voxelpest/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/SideQuestBar/voxelpest/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.6...v1.1.0
 [1.0.6]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.5...v1.0.6
