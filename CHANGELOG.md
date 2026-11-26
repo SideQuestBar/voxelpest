@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Map: grown to 8.6 × 8.6 km: 1 km more at the top takes in all of Margaret Island up to Árpád Bridge, Újlipótváros and
+  Rózsadomb, and 0.5 km more on the left the whole track field of Kelenföld station and the M4 depot. A `margitsziget`
+  view.
+
+### Changed
+
+- Viewer: the site's map tiles come four to a file (the four that share a parent, which the viewer always asks for
+  together): the same bytes in a quarter of the requests, and ~6 000 files instead of ~24 000, under Cloudflare Pages'
+  20 000.
+
+### Fixed
+
+- Map: a row of the WestEnd roof garden's deck furniture stood 2.3 km south of it since the map grew on 22 November.
+- Map: St Stephen's Basilica follows OpenStreetMap's new outline of it (it was skipped with the fresh data).
+
 ## [1.1.1] - 2026-11-26
 
 ### Changed

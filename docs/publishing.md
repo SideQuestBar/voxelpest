@@ -15,7 +15,8 @@ dashboard. `web/public/404.html` makes missing files real 404s (without it Pages
 `meta.json` and the viewer asks for each tile with it (`?v=`), so a new map is never served from an old cache. On a
 custom domain, set the zone's Browser Cache TTL (Caching > Configuration) to "Respect Existing Headers": by default it
 raises Pages' `max-age=0` to 4 hours for the file types it caches. Pages takes up to 20 000 files of up to 25 MiB each: the
-script checks both before deploying.
+script checks both before deploying. The map's tiles go up four to a file (vite.config.js bundles them in the build), ~6 000
+files for the 8.6 × 8.6 km map rather than the ~24 000 one per tile would take.
 
 ## Minecraft server (`minecraft/`)
 

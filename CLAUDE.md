@@ -1,6 +1,6 @@
 # Budapest in voxels: notes for Claude Code
 
-An 8.1 × 7.6 km voxel diorama of central Budapest at 0.5 m, from free data (OSM, Copernicus DEM, FABDEM,
+An 8.6 × 8.6 km voxel diorama of central Budapest at 0.5 m, from free data (OSM, Copernicus DEM, FABDEM,
 GlobalBuildingAtlas, Urban Atlas heights via Átló, Sentinel-2 cloudless, Mapillary map features, Wikidata), shown in
 this project's own three.js viewer (map, walk, drive and fly modes, EN/HU, keyboard, touch and game controllers). Inspired by
 [warsaw-vibe-voxel](https://github.com/stared/warsaw-vibe-voxel), whose tile format it uses. Thirty-nine landmarks are
@@ -49,7 +49,7 @@ them when `web/public/data` is missing or older than the parts.
 
 | File | Role |
 | --- | --- |
-| `aoi.py` | The grid. EOV (EPSG:23700) turned THETA = 41.5° so Pest's street grid lies on voxel faces (`orient.py` measured it). W × D = 8064 × 7552 m (Kelenföld to the Puskás Aréna, Margaret Bridge to the bottom of Népliget): as big as Cloudflare Pages' 20 000 files allow (19 870 with the site's own; a bigger map needs a paid plan, or bundled tiles). In November 2026 the map grew twice on the left (512 m, then 2304 m, with 128 m off the right) and at the bottom: each time every grid x moved by the columns added and the literal coordinates in the landmark modules were moved with it (`shift.py`-style: every (x, y) pair, `Frame`/`Point` call and the few loops and comparisons on x by hand), checked by comparing every landmark solid's bounding box before and after. Since then prep.py merges the two GlobalBuildingAtlas tiles and fetch_fabdem gets N47E018 too. `to_grid` / `to_world`. |
+| `aoi.py` | The grid. EOV (EPSG:23700) turned THETA = 41.5° so Pest's street grid lies on voxel faces (`orient.py` measured it). W × D = 8576 × 8576 m (Kelenföld station's track field to the Puskás Aréna, Árpád Bridge and all of Margaret Island to the bottom of Népliget). The site bundles the tiles four to a file (`vite.config.js`), 6 000-odd files where one per tile would be 24 000, over Cloudflare Pages' 20 000. In November 2026 the map grew three times on the left (512 m, 2304 m with 128 m off the right, then 512 m), once at the bottom and once at the top (1024 m): each time every grid x (and with the rows at the top every grid y) moved by what was added and the literal coordinates in the landmark modules were moved with it (`shift.py`-style: every (x, y) pair and `Frame`/`Point`/`ground_m` call, a difference of two constants left alone, and the few loops and comparisons by hand), checked by comparing every landmark solid's bounding box before and after. Since then prep.py merges the two GlobalBuildingAtlas tiles and fetch_fabdem gets N47E018 too. `to_grid` / `to_world`. |
 | `fetch_*.py/.sh`, `osm_pbf.py`, `rangezip.py` | Downloads. OSM from BBBike's Budapest extract; GBA and FABDEM read by HTTP range requests out of big zips; Sentinel-2 from EOX's WMTS; Mapillary from its vector tiles. |
 | `prep.py` | DSM, FABDEM (`dtm`), GBA and Sentinel-2 (`s2`, uint8 RGB) resampled onto the 1 m grid -> `data/prep.npz`. |
 | `osm.py` | OSM JSON -> shapely geometries in grid coordinates (x = column, y = row, metres). |
@@ -226,8 +226,10 @@ Full description in `minecraft/README.md`. Working knowledge:
   goes there instead of to the nearest pavement); `sidequest.door` (the pavement in front of the bar) and `heading`.
 - `engine/tiles.ts`: quadtree LOD (split where a cell covers more than `err` px, default 2.2; a tile shows until all
   four children are meshed), a worker pool, tiles unused for 10 s freed. `setFocus(x, z, r)` forces the finest level
-  within r m of the walker or car; finest tiles come back with their columns (`columns(x, z)`). Tile URLs must be
-  absolute (`new URL(..., document.baseURI)`): a relative one resolves against the worker's script and 404s. A tile
+  within r m of the walker or car; finest tiles come back with their columns (`columns(x, z)`). The tiles come in
+  bundles of the four children of a tile (`tiles/{s}/{x}_{y}.pak`, vite.config.js): `pump()` fetches the bundles of
+  the most wanted tiles (six at a time), cuts each tile's gzip out (`cut`) and hands the bytes to a worker; bundles go
+  10 s after their last use (`sweep`). Their URLs are absolute (`new URL(..., document.baseURI)`). A tile
   leaving the view (its children or its parent took its place) dissolves over its replacement for 450 ms (`fading`):
   material.ts's eight `fading` copies define `FADE` and drop a growing share of pixels in a screen-space pattern, with
   their own program so the opaque one has no `discard`; drawn last (`renderOrder` 1), casting no shadow. `warm()`
@@ -447,7 +449,7 @@ Full description in `minecraft/README.md`. Working knowledge:
   `body.noui`, which also covers the touch controls, hints, toasts and the fps panel; the menu still opens.
 - Hosting (Cloudflare Pages): `public/404.html` must stay (without it Pages answers a missing tile with
   `index.html` and a 200, which the worker can't read; a 404 is an empty tile), `public/_headers` sets the caching,
-  `vite.config.js` drops the map's tarball parts from `dist`. Limits: 20 000 files, 25 MiB each (the map is ~8 750).
+  `vite.config.js` drops the map's tarball parts from `dist` and bundles the tiles: the four children of a tile in one `tiles/{s}/{x}_{y}.pak` (eight uint32 of offsets and lengths, then their gzips), which `engine/tiles.ts` fetches once and cuts up for the meshers; the dev server bundles `public/data` on the fly, and `public/data` keeps one file per tile for `minecraft.py`. Limits: 20 000 files, 25 MiB each (the map is ~6 000 bundles of under 1 MB).
   **Tile caching**: tile URLs are the same for every map, and map.side-quest.bar's Cloudflare zone turned Pages'
   `max-age=0` into 4 hours for `.bin` (its Browser Cache TTL), so a phone kept the old map's tiles under the new
   meta.json. The build (`versionTiles` in vite.config.js) writes a hash of every tile's path and bytes into dist's
