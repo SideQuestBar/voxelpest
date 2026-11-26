@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-26
 
 ### Added
 
@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   flow past.
 - Viewer: the plane's and the helicopter's instruments redrawn like real ones, with a turn coordinator, a three-hand
   altimeter, a lagging vertical speed indicator, and a tachometer or torque and rotor rpm.
+- Viewer: the map takes about a third of the memory it did (each voxel face is 16 bytes instead of 48, and the lamp
+  and tree maps are smaller), so phones hold more of it in detail.
+- Viewer: only what changed is drawn: shadows are redrawn when the sun, the view or the tiles change, and a still map
+  is drawn about 30 times a second, which spares the battery.
 - Docs: the README covers fly mode.
 - Docs: the new landmark modules and the two map fixes documented.
 - Map: the A38's gangways rebuilt as covered steel footbridges from the quay down to the ship.
@@ -130,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release.
 - Version numbers on the about page.
 
-[Unreleased]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/SideQuestBar/voxelpest/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.6...v1.1.0
 [1.0.6]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/SideQuestBar/voxelpest/compare/v1.0.3...v1.0.4
